@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: https: http:; connect-src 'self' https://api.cybercraft.uz http://127.0.0.1:8000 http://localhost:8000;"
+    />
+    <title>CyberCraft Launcher</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="title-bar">
+      <div class="title-bar-drag">
+        <img
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f0ff'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E"
+          alt="Logo"
+          class="title-logo"
+        />
+        <span>CyberCraft Launcher</span>
+        <span class="connection-status" id="connectionStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Ulanmoqda...</span>
+        </span>
+      </div>
+      <div class="title-bar-controls">
+        <button class="title-btn minimize-btn" id="minimizeBtn">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <rect y="5" width="12" height="2" fill="currentColor" />
+          </svg>
+        </button>
+        <button class="title-btn maximize-btn" id="maximizeBtn">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <rect
+              x="1"
+              y="1"
+              width="10"
+              height="10"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            />
+          </svg>
+        </button>
+        <button class="title-btn close-btn" id="closeBtn">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <path
+              d="M1 1l10 10M11 1L1 11"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <section class="page" id="loginPage">
+      <div class="login-container">
+        <div class="login-box">
+          <div class="login-header">
+            <h1 class="glitch" data-text="CYBERCRAFT">CYBERCRAFT</h1>
+            <p>Yopiq ekotizimga kirish</p>
+          </div>
+          <form id="loginForm">
+            <div class="input-group">
+              <label for="username">Foydalanuvchi nomi</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                required
+                autocomplete="username"
+                placeholder="Username kiriting"
+              />
+            </div>
+            <div class="input-group">
+              <label for="password">Parol</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                autocomplete="current-password"
+                placeholder="Parol kiriting"
+              />
+            </div>
+            <div class="login-options">
+              <label class="remember-me">
+                <input type="checkbox" id="rememberMe" />
+                <span>Meni eslab qol</span>
+              </label>
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">
+              <span class="btn-text">KIRISH</span>
+              <span class="btn-loader"></span>
+            </button>
+            <p class="login-error" id="loginError"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <div class="container" id="mainContainer" style="display: none">
+      <aside class="sidebar">
+        <div class="user-profile">
+          <div class="avatar">
+            <img
+              id="userAvatar"
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f0ff'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+              alt="Avatar"
+            />
+          </div>
+          <div class="user-info">
+            <span class="username" id="displayUsername">Player</span>
+            <span class="status online">Online</span>
+          </div>
+          <button class="logout-btn" id="logoutBtn" title="Chiqish">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="nav-menu">
+          <button class="nav-item active" data-page="home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg>
+            <span>Bosh sahifa</span>
+          </button>
+          <button class="nav-item" data-page="news">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
+              />
+            </svg>
+            <span>Yangiliklar</span>
+          </button>
+          <button class="nav-item" data-page="servers">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+              />
+            </svg>
+            <span>Serverlar</span>
+          </button>
+          <button class="nav-item" data-page="settings">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c.59-.24 1.13-.57 1.62-.94l2.39-.96c.22-.08.47 0 .59-.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+              />
+            </svg>
+            <span>Sozlamalar</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="version-info">
+            <span>Launcher v2.1.0</span>
+            <span class="update-status" id="launcherStatus"
+              >Tekshirilmoqda...</span
+            >
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <section class="page active" id="home">
+          <div class="hero-section" id="heroSection">
+            <div class="hero-bg" id="heroBg"></div>
+            <div class="hero-content">
+              <h1 class="glitch" id="heroServerName" data-text="CYBERCRAFT">
+                CYBERCRAFT
+              </h1>
+              <p class="hero-subtitle" id="heroServerSubtitle">
+                Backend-Controlled Gaming Platform
+              </p>
+            </div>
+          </div>
+
+          <div class="game-controls">
+            <div class="server-selector">
+              <label>Server tanlang:</label>
+              <select id="serverSelect" disabled>
+                <option value="">Serverlar yuklanmoqda...</option>
+              </select>
+            </div>
+
+            <!-- Server Ma'lumotlari -->
+            <div
+              class="server-info-section"
+              id="serverInfoSection"
+              style="display: none"
+            >
+              <div class="server-info-card">
+                <div class="server-info-stat">
+                  <div class="stat-icon">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-value" id="serverPlayers">--/--</span>
+                    <span class="stat-label">O'yinchilar</span>
+                  </div>
+                </div>
+                <div class="server-info-stat" id="playtimeStat">
+                  <div class="stat-icon">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-value" id="playtimeDisplay">0 daqiqa</span>
+                    <span class="stat-label">O'yin vaqti</span>
+                  </div>
+                </div>
+                <div class="server-info-stat">
+                  <div class="stat-icon">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                      />
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-value" id="serverVersion">--</span>
+                    <span class="stat-label">Versiya</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button class="play-button" id="playBtn" disabled>
+              <span class="play-icon">▶</span>
+              <span class="play-text">TEKSHIRISH...</span>
+              <div class="play-glow"></div>
+            </button>
+          </div>
+
+          <div class="manifest-status" id="manifestStatus">
+            <div class="manifest-header">
+              <h3>Fayl holati</h3>
+              <span class="manifest-badge" id="manifestBadge">Kutilmoqda</span>
+            </div>
+            <div class="manifest-info">
+              <div class="manifest-stat">
+                <span class="stat-label">Modlar:</span>
+                <span class="stat-value" id="modsCount">--</span>
+              </div>
+              <div class="manifest-stat">
+                <span class="stat-label">Resourcepacks:</span>
+                <span class="stat-value" id="resourcepacksCount">--</span>
+              </div>
+              <div class="manifest-stat">
+                <span class="stat-label">Shaders:</span>
+                <span class="stat-value" id="shadersCount">--</span>
+              </div>
+              <div class="manifest-stat">
+                <span class="stat-label">Hajmi:</span>
+                <span class="stat-value" id="totalSize">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="news-section">
+            <div class="news-header">
+              <h2>Yangiliklar</h2>
+              <div class="news-actions">
+                <button class="action-btn" id="showChangelog" style="margin-right: 10px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                  </svg>
+                  Changelog
+                </button>
+                <button class="view-all-btn" data-page="news">
+                  Barchasini ko'rish
+                </button>
+              </div>
+            </div>
+
+            <div class="news-grid" id="newsGrid">
+              <div class="news-loading">Yangiliklar yuklanmoqda...</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="news">
+          <h2 class="page-title">Yangiliklar</h2>
+          <p class="page-description">
+            So'nggi yangiliklar, e'lonlar va serverlar haqida ma'lumotlar.
+          </p>
+          <div class="news-filters">
+            <button class="filter-btn active" data-filter="all">
+              Barchasi
+            </button>
+            <button class="filter-btn" data-filter="yangilik">
+              Yangiliklar
+            </button>
+            <button class="filter-btn" data-filter="event">Eventlar</button>
+            <button class="filter-btn" data-filter="update">
+              Yangilanishlar
+            </button>
+            <button class="filter-btn" data-filter="announcement">
+              E'lonlar
+            </button>
+          </div>
+          <div class="news-list-full" id="newsListFull">
+            <div class="news-loading">Yangiliklar yuklanmoqda...</div>
+          </div>
+        </section>
+
+        <section class="page" id="servers">
+          <h2 class="page-title">Serverlar ro'yxati</h2>
+          <p class="page-description">
+            CyberCraft tarmog'idagi barcha ochiq serverlar.
+          </p>
+          <div class="servers-list" id="serversList">
+            <div class="news-loading">Serverlar yuklanmoqda...</div>
+          </div>
+        </section>
+
+        <section class="page" id="cabinet">
+          <h2 class="page-title">Shaxsiy kabinet</h2>
+          <div class="cabinet-grid">
+            <!-- User Profile Section -->
+            <div class="cabinet-card profile-card">
+              <div class="cabinet-header">
+                <h3>Profil</h3>
+              </div>
+              <div class="user-profile-details">
+                <div class="user-avatar-wrapper larger">
+                  <img
+                    src="assets/default-avatar.png"
+                    alt="User Avatar"
+                    id="settingsUserAvatar"
+                  />
+                  <div class="avatar-glow"></div>
+                </div>
+                <div class="user-main-info">
+                  <h2 id="settingsUsername">Player</h2>
+                  <div class="user-details-list">
+                    <div class="detail-item">
+                      <span class="detail-label">Email</span>
+                      <span class="detail-value" id="settingsEmail"
+                        >loading...</span
+                      >
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">Status</span>
+                      <span
+                        class="detail-value status-badge"
+                        id="settingsWhitelist"
+                      >
+                        <span class="status-indicator"></span>
+                        loading...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button class="cyber-btn primary" id="uploadSkinBtn">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"
+                    />
+                  </svg>
+                  Skin yuklash
+                </button>
+                <input
+                  type="file"
+                  id="skinFileInput"
+                  accept=".png"
+                  style="display: none"
+                />
+                <button class="cyber-btn danger" id="logoutSettings">
+                  Chiqish
+                </button>
+              </div>
+            </div>
+
+            <!-- Stats/Balance Section -->
+            <div class="cabinet-card stats-card">
+              <div class="cabinet-header">
+                <h3>Ma'lumotlar</h3>
+              </div>
+              <div class="stats-list">
+                <div class="stat-item">
+                  <span class="stat-label">Balans</span>
+                  <span class="stat-value">0 CC</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Ro'yxatdan o'tilgan</span>
+                  <span class="stat-value">--.--.----</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="settings">
+          <h2 class="page-title">Launcher sozlamalari</h2>
+          <div class="settings-container">
+            <div class="settings-group">
+              <h3>O'yin sozlamalari</h3>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">Java yo'li</span>
+                  <span class="setting-description"
+                    >Tizimdagi Java (JRE/JDK) joylashuvi (min v21)</span
+                  >
+                </div>
+                <div class="setting-control">
+                  <input
+                    type="text"
+                    class="path-input"
+                    id="javaPath"
+                    placeholder="Avtomatik aniqlash..."
+                    readonly
+                    disabled
+                  />
+                  <button
+                    class="browse-btn"
+                    id="browseJava"
+                    title="O'zgartirish"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">O'yin papkasi</span>
+                  <span class="setting-description"
+                    >CyberCraft fayllar joylashuvi</span
+                  >
+                </div>
+                <div class="setting-control">
+                  <input
+                    type="text"
+                    class="path-input"
+                    id="gameDir"
+                    placeholder="Standart joylashuv..."
+                    readonly
+                  />
+                  <button
+                    class="browse-btn open-folder-btn"
+                    id="openGameDir"
+                    title="Papkani ochish"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">RAM ajratish</span>
+                  <span class="setting-description"
+                    >O'yin uchun ajratiladigan xotira (tavsiya: 4-8 GB)</span
+                  >
+                </div>
+                <div class="setting-control ram-control">
+                  <input
+                    type="range"
+                    id="settingsRamSlider"
+                    min="2"
+                    max="16"
+                    value="4"
+                  />
+                  <span id="settingsRamValue" class="ram-value">4 GB</span>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">JVM argumentlari</span>
+                  <span class="setting-description"
+                    >Qo'shimcha Java parametrlari (ilg'or foydalanuvchilar
+                    uchun)</span
+                  >
+                </div>
+                <div class="setting-control">
+                  <input
+                    type="text"
+                    class="path-input jvm-args-input"
+                    id="jvmArgs"
+                    placeholder="-XX:+UseG1GC -XX:MaxGCPauseMillis=50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>Launcher sozlamalari</h3>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label"
+                    >O'yin boshlanganda yashirish</span
+                  >
+                  <span class="setting-description"
+                    >Launcher oynasi tray'ga yashiriladi</span
+                  >
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="hideOnLaunch" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label"
+                    >Windows bilan ishga tushirish</span
+                  >
+                  <span class="setting-description"
+                    >Kompyuter yonganda launcher ham yoqiladi</span
+                  >
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="startWithWindows" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label"
+                    >Avtomatik yangilanishlarni tekshirish</span
+                  >
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="autoCheckUpdates" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">Discord RPC</span>
+                  <span class="setting-description"
+                    >Discord statusida nima o'ynayotganingizni ko'rsatish</span
+                  >
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="discordRPC" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>Video sozlamalari</h3>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">To'liq ekran rejimida</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="fullscreen" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">O'yin o'lchami</span>
+                </div>
+                <div class="setting-control">
+                  <select class="path-input" id="gameResolution">
+                    <option value="1280x720">1280 x 720 (16:9)</option>
+                    <option value="1920x1080">1920 x 1080 (Full HD)</option>
+                    <option value="854x480">854 x 480 (standard)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>Tizim va xavfsizlik</h3>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <span class="setting-label">Loglarni saqlash</span>
+                  <span class="setting-description"
+                    >O'yin xatoliklarini aniqlash uchun loglarni yozib borish</span
+                  >
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="saveLogs" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                    <input
+                      type="file"
+                      id="skinFileInput"
+                      accept=".png"
+                      hidden
+                    />
+                    <button
+                      class="action-btn skin-upload-btn"
+                      id="uploadSkinBtn"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
+                      </svg>
+                      Skin yuklash
+                    </button>
+                    <span class="skin-hint">64x64 yoki 64x32 PNG</span>
+                  </div>
+                </div>
+                <div class="account-details-section">
+                  <div class="account-detail-item">
+                    <span class="detail-label">Foydalanuvchi nomi</span>
+                    <span class="detail-value" id="settingsUsername"
+                      >Yuklanmoqda...</span
+                    >
+                  </div>
+                  <div class="account-detail-item">
+                    <span class="detail-label">Email</span>
+                    <span class="detail-value" id="settingsEmail"
+                      >Yuklanmoqda...</span
+                    >
+                  </div>
+                  <div class="account-detail-item">
+                    <span class="detail-label">Holat</span>
+                    <span
+                      class="detail-value status-badge"
+                      id="settingsWhitelist"
+                    >
+                      <span class="status-indicator"></span>
+                      Tekshirilmoqda...
+                    </span>
+                  </div>
+                </div>
+                <div class="account-actions">
+                  <button class="action-btn danger-btn" id="logoutSettings">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+                      />
+                    </svg>
+                    Hisobdan chiqish
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>Haqida</h3>
+              <div class="about-info">
+                <div class="about-logo">
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="url(#logoGradient)"
+                  >
+                    <defs>
+                      <linearGradient
+                        id="logoGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="100%"
+                      >
+                        <stop offset="0%" style="stop-color: #00f0ff" />
+                        <stop offset="100%" style="stop-color: #ff0060" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                    />
+                  </svg>
+                </div>
+                <div class="about-details">
+                  <h4>CyberCraft Launcher</h4>
+                  <p>Versiya: <span id="launcherVersion">2.1.0</span></p>
+                  <p>Optimizatsiyalangan Minecraft tajribasi</p>
+                </div>
+              </div>
+              <div class="about-links">
+                <a
+                  href="https://cybercraft.uz"
+                  target="_blank"
+                  class="about-link"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"
+                    />
+                  </svg>
+                  Veb sayt
+                </a>
+                <a
+                  href="https://discord.gg/cybercraft"
+                  target="_blank"
+                  class="about-link"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
+                    />
+                  </svg>
+                  Discord
+                </a>
+                <a
+                  href="https://t.me/cybercraft"
+                  target="_blank"
+                  class="about-link"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"
+                    />
+                  </svg>
+                  Telegram
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="news-modal" id="newsModal">
+      <div class="news-modal-content">
+        <div class="news-modal-header" id="newsModalHeader">
+          <button class="news-modal-close" id="newsModalClose">&times;</button>
+        </div>
+        <div class="news-modal-body">
+          <div class="news-modal-meta" id="newsModalMeta"></div>
+          <h2 class="news-modal-title" id="newsModalTitle"></h2>
+          <div class="news-modal-text" id="newsModalText"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-content">
+        <div class="cyber-loader">
+          <div class="loader-ring"></div>
+          <div class="loader-ring"></div>
+          <div class="loader-ring"></div>
+        </div>
+        <p class="loading-text" id="loadingText">Yuklanmoqda...</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="progress-text" id="progressText">0%</span>
+        <div class="sync-details" id="syncDetails"></div>
+      </div>
+    </div>
+
+    <div class="confirm-dialog" id="confirmDialog">
+      <div class="confirm-dialog-content">
+        <div class="confirm-dialog-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+            />
+          </svg>
+        </div>
+        <h3 class="confirm-dialog-title" id="confirmDialogTitle">Tasdiqlash</h3>
+        <p class="confirm-dialog-message" id="confirmDialogMessage">
+          Ushbu amalni bajarishni tasdiqlaysizmi?
+        </p>
+        <div class="confirm-dialog-buttons">
+          <button class="confirm-btn cancel" id="confirmDialogCancel">
+            Bekor qilish
+          </button>
+          <button class="confirm-btn confirm" id="confirmDialogConfirm">
+            Tasdiqlash
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crash Modal -->
+    <div class="confirm-dialog" id="crashModal">
+      <div class="confirm-dialog-content" style="max-width: 600px;">
+        <div class="confirm-dialog-icon" style="color: var(--error);">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+        </div>
+        <h3 class="confirm-dialog-title">O'yin xato bilan yopildi</h3>
+        <div id="crashLogContent" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #ccc; max-height: 200px; overflow-y: auto; text-align: left; margin: 15px 0; white-space: pre-wrap;"></div>
+        <div class="confirm-dialog-buttons">
+          <button class="confirm-btn cancel" id="crashModalClose">Yopish</button>
+          <button class="confirm-btn confirm" id="openLogsBtn">Loglarni ochish</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Modal -->
+    <div class="update-overlay" id="updateOverlay">
+      <div class="update-modal">
+        <div class="update-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="url(#updateGradient)">
+            <defs>
+              <linearGradient id="updateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color: #00f0ff" />
+                <stop offset="100%" style="stop-color: #7b2fff" />
+              </linearGradient>
+            </defs>
+            <path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79s7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.5-9.11 0-12.58 3.51-3.47 9.14-3.49 12.65-.06L21 3v7.12zM12.5 8v4.25l3.5 2.08-.72 1.21L11 13V8h1.5z"/>
+          </svg>
+        </div>
+        <h2 class="update-title">Yangi versiya mavjud!</h2>
+        <div class="update-version">
+          <span class="update-current" id="updateCurrentVersion">v2.1.0</span>
+          <span class="update-arrow">→</span>
+          <span class="update-new" id="updateNewVersion">v2.2.0</span>
+        </div>
+        <div class="update-notes" id="updateNotes"></div>
+        <div class="update-progress-section" id="updateProgressSection" style="display: none;">
+          <div class="update-progress-bar">
+            <div class="update-progress-fill" id="updateProgressFill"></div>
+          </div>
+          <div class="update-progress-info">
+            <span id="updateProgressPercent">0%</span>
+            <span id="updateProgressSize">0 MB / 0 MB</span>
+          </div>
+        </div>
+        <div class="update-status" id="updateStatus">Yangilanishni yuklab olish kerak.</div>
+        <div class="update-buttons" id="updateButtons">
+          <button class="update-btn primary" id="updateDownloadBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            Yangilash
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="renderer/config.js"></script>
+    <script src="renderer/api.js"></script>
+    <script src="renderer/ui.js"></script>
+    <script src="renderer/game.js"></script>
+    <script src="renderer/settings.js"></script>
+    <script src="renderer/init.js"></script>
+  </body>
+</html>
+
