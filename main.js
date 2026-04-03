@@ -407,6 +407,14 @@ ipcMain.handle("find-java-21", async () => {
 
 ipcMain.handle("launch-game", async (event, options) => {
   const { server, manifest, ram, javaPath, username, token } = options;
+  const safeManifest = manifest || {
+    loader: server?.loader || "vanilla",
+    loaderVersion: server?.loader_version || null,
+    minecraft: server?.minecraft_version || options.minecraftVersion || "1.20.4",
+    address: server
+      ? `${server.ip_address || "127.0.0.1"}:${server.port || 25565}`
+      : undefined,
+  };
 
   try {
     await ensureDirectories();
@@ -441,13 +449,21 @@ ipcMain.handle("launch-game", async (event, options) => {
     }
 
     const cybercraftArgs = [];
-    const cybercraftEnv = { ...process.env };
-    if (token) {
-      cybercraftEnv.CYBERCRAFT_TOKEN = token;
-      cybercraftEnv.CYBERCRAFT_API = CONFIG.API_BASE_URL;
-      cybercraftArgs.push("-Dcybercraft.auth=env");
-      console.log("[CyberCraft] Auth token will be passed via environment");
-    } else {
+    if (token && server) {
+      // Serverga ulanishdan oldin session yaratish
+      try {
+        console.log("[CyberCraft] Creating auth session before connecting...");
+        const sessionResult = await createAuthSession(token);
+        if (sessionResult.success) {
+          console.log(`[CyberCraft] Auth session created for ${sessionResult.username}, expires in ${sessionResult.expires_in}s`);
+        } else {
+          console.warn(`[CyberCraft] Session creation failed: ${sessionResult.error}`);
+        }
+      } catch (sessionErr) {
+        console.warn("[CyberCraft] Session creation error:", sessionErr.message);
+        // Session yaratilmasa ham o'yinni ishga tushirish — server kick qiladi
+      }
+    } else if (!token) {
       console.warn(
         "[CyberCraft] No auth token provided - server may reject connection",
       );
@@ -513,9 +529,9 @@ ipcMain.handle("launch-game", async (event, options) => {
       ],
     };
 
-    const loader = manifest.loader || "vanilla";
-    const loaderVersion = manifest.loaderVersion;
-    const mcVersion = manifest.minecraft;
+    const loader = safeManifest.loader || "vanilla";
+    const loaderVersion = safeManifest.loaderVersion;
+    const mcVersion = safeManifest.minecraft;
 
     if (loader === "forge" && loaderVersion) {
       launchOptions.version = {
@@ -633,13 +649,14 @@ ipcMain.handle("launch-game", async (event, options) => {
       console.log(`[CyberCraft] Using Vanilla MC ${mcVersion}`);
     }
 
-    if (server && server.address) {
-      const [host, port] = server.address.split(":");
+    const serverAddress = server?.address || safeManifest.address;
+    if (serverAddress) {
+      const [host, port] = serverAddress.split(":");
       launchOptions.server = {
         host: host,
         port: port || "25565",
       };
-      console.log(`[CyberCraft] Will connect to server: ${server.address}`);
+      console.log(`[CyberCraft] Will connect to server: ${serverAddress}`);
     }
 
     console.log("[CyberCraft] Launching Minecraft with options:", {
@@ -648,7 +665,7 @@ ipcMain.handle("launch-game", async (event, options) => {
       loader: loader,
       loaderVersion: loaderVersion,
       ram: `${ram}G`,
-      server: server?.address,
+      server: serverAddress,
     });
 
     try {
@@ -689,6 +706,66 @@ ipcMain.handle("launch-game", async (event, options) => {
     return { success: false, error: err.message };
   }
 });
+
+// =============================================
+// CyberCraft Auth Session
+// =============================================
+
+function createAuthSession(token) {
+  const url = `${CONFIG.API_BASE_URL}/api/minecraft/session/create/`;
+
+  return new Promise((resolve) => {
+    const protocol = url.startsWith("https") ? https : http;
+    const urlObj = new URL(url);
+
+    const postData = JSON.stringify({});
+
+    const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port,
+      path: urlObj.pathname,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Launcher ${token}`,
+        "Content-Length": Buffer.byteLength(postData),
+      },
+    };
+
+    const req = protocol.request(options, (response) => {
+      let data = "";
+      response.on("data", (chunk) => (data += chunk));
+      response.on("end", () => {
+        try {
+          const result = JSON.parse(data);
+          if (response.statusCode === 200) {
+            resolve(result);
+          } else {
+            resolve({
+              success: false,
+              error: result.error || `HTTP ${response.statusCode}`,
+            });
+          }
+        } catch (err) {
+          resolve({ success: false, error: "JSON parse error" });
+        }
+      });
+    });
+
+    req.on("error", (err) => {
+      console.error("[CyberCraft] Session create error:", err.message);
+      resolve({ success: false, error: err.message });
+    });
+
+    req.setTimeout(5000, () => {
+      req.destroy();
+      resolve({ success: false, error: "Timeout" });
+    });
+
+    req.write(postData);
+    req.end();
+  });
+}
 
 // =============================================
 // Auto-Update System

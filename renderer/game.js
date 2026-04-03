@@ -182,6 +182,8 @@ const GameLauncher = {
         AppState.gameStartTime = Date.now();
 
         const launchOptions = {
+          server: server,
+          manifest: AppState.manifest,
           serverId: server.id,
           serverName: server.name,
           minecraftVersion: server.minecraft_version,
