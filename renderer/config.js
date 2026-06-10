@@ -19,36 +19,25 @@ const AppState = {
   servers: [],
   selectedServer: null,
   manifest: null,
-  news: [],
-  newsFilter: "all",
-  selectedNews: null,
-  gameStartTime: null,
   serverPingInterval: null,
   settings: {
     ram: 4,
     javaPath: "",
     gameDir: "",
     hideOnLaunch: true,
-    startWithWindows: false,
-    autoCheckUpdates: true,
-    discordRPC: true,
+    optimizeJava: true,
     fullscreen: false,
-    gameResolution: "1280x720",
-    jvmArgs: "",
-    saveLogs: true,
+    debug: false,
+    redownload: false,
   },
 };
 
 const isElectron = typeof window !== "undefined" && window.electronAPI;
 
-// Helper to get element by ID with console warning if missing
-const getEl = (id) => {
-  const el = document.getElementById(id);
-  // if (!el) console.warn(`Element with ID "${id}" not found in DOM.`);
-  return el;
-};
+const getEl = (id) => document.getElementById(id);
 
 const elements = {
+  // Login
   loginPage: getEl("loginPage"),
   loginForm: getEl("loginForm"),
   loginBtn: getEl("loginBtn"),
@@ -57,60 +46,66 @@ const elements = {
   passwordInput: getEl("password"),
   rememberMe: getEl("rememberMe"),
 
+  // Main
   mainContainer: getEl("mainContainer"),
-  displayUsername: getEl("displayUsername"),
+  titleBarActions: getEl("titleBarActions"),
+  titleUsername: getEl("titleUsername"),
+  userRankBadge: getEl("userRankBadge"),
+  userBalance: getEl("userBalance"),
   logoutBtn: getEl("logoutBtn"),
-  connectionStatus: getEl("connectionStatus"),
-  launcherStatus: getEl("launcherStatus"),
+  totalOnlineCount: getEl("totalOnlineCount"),
 
-  serverSelect: getEl("serverSelect"),
-  // ramSlider: getEl("ramSlider"), // Removed as it's not in index.html
-  // ramValue: getEl("ramValue"),   // Removed as it's not in index.html
+  // Server Detail (Primary)
+  serverDetailPage: getEl("serverDetailPage"),
+  detailBackground: getEl("detailBackground"),
+  detailServerName: getEl("detailServerName"),
+  detailDescription: getEl("detailDescription"),
+  detailCategory: getEl("detailCategory"),
+  detailFavStar: getEl("detailFavStar"),
+  detailOnlineCount: getEl("detailOnlineCount"),
+  detailLastWipe: getEl("detailLastWipe"),
+  detailGallery: getEl("detailGallery"),
+  detailFeaturesTitle: getEl("detailFeaturesTitle"),
+  detailFeaturesGrid: getEl("detailFeaturesGrid"),
+  optionalModsLink: getEl("optionalModsLink"),
   playBtn: getEl("playBtn"),
-  playtimeDisplay: getEl("playtimeDisplay"),
 
+  // Bottom Server List
+  serverBottomBar: getEl("serverBottomBar"),
+  serverIconList: getEl("serverIconList"),
+
+  // Manifest / Status
   manifestBadge: getEl("manifestBadge"),
   modsCount: getEl("modsCount"),
-  resourcepacksCount: getEl("resourcepacksCount"),
-  shadersCount: getEl("shadersCount"),
   totalSize: getEl("totalSize"),
+  syncStatus: getEl("syncStatus"),
 
-  serversList: getEl("serversList"),
-  newsGrid: getEl("newsGrid"),
-  newsListFull: getEl("newsListFull"),
-
-  newsModal: getEl("newsModal"),
-  newsModalHeader: getEl("newsModalHeader"),
-  newsModalClose: getEl("newsModalClose"),
-  newsModalMeta: getEl("newsModalMeta"),
-  newsModalTitle: getEl("newsModalTitle"),
-  newsModalText: getEl("newsModalText"),
-
-  javaPath: getEl("javaPath"),
+  // Settings Modal
+  settingsBtn: getEl("settingsBtn"),
+  settingsOverlay: getEl("settingsOverlay"),
+  settingsCloseBtn: getEl("settingsCloseBtn"),
   gameDir: getEl("gameDir"),
-  hideOnLaunch: getEl("hideOnLaunch"),
-  browseJava: getEl("browseJava"),
+  settingsRamSlider: getEl("settingsRamSlider"),
+  settingsRamValueMB: getEl("settingsRamValueMB"),
+  browseGameDir: getEl("browseGameDir"),
+  openGameDir: getEl("openGameDir"),
+  resetGameDir: getEl("resetGameDir"),
+  optimizeJava: getEl("optimizeJava"),
+  fullscreenMode: getEl("fullscreenMode"),
+  debugMode: getEl("debugMode"),
+  redownloadFiles: getEl("redownloadFiles"),
+  settingsResetBtn: getEl("settingsResetBtn"),
+  settingsCancelBtn: getEl("settingsCancelBtn"),
+  settingsSaveBtn: getEl("settingsSaveBtn"),
 
+  // Loading
   loadingOverlay: getEl("loadingOverlay"),
   loadingText: getEl("loadingText"),
   progressFill: getEl("progressFill"),
   progressText: getEl("progressText"),
   syncDetails: getEl("syncDetails"),
 
-  settingsRamSlider: getEl("settingsRamSlider"),
-  settingsRamValue: getEl("settingsRamValue"),
-  jvmArgs: getEl("jvmArgs"),
-  startWithWindows: getEl("startWithWindows"),
-  autoCheckUpdates: getEl("autoCheckUpdates"),
-  discordRPC: getEl("discordRPC"),
-  fullscreen: getEl("fullscreen"),
-  gameResolution: getEl("gameResolution"),
-  saveLogs: getEl("saveLogs"),
-  clearCache: getEl("clearCache"),
-  openLogs: getEl("openLogs"),
-  openGameDir: getEl("openGameDir"),
-  logoutSettings: getEl("logoutSettings"),
-
+  // Crash Modal
   crashModal: getEl("crashModal"),
   crashLogContent: getEl("crashLogContent"),
   crashModalClose: getEl("crashModalClose"),

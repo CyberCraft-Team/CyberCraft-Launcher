@@ -1,5 +1,5 @@
 // =============================================
-// Game Module — CyberCraft Launcher
+// Game Module — CyberCraft Launcher (Simplified)
 // =============================================
 const ManifestSync = {
   async fetchManifest(server) {
@@ -10,8 +10,7 @@ const ManifestSync = {
       AppState.manifest = manifest;
       UI.updateManifestStats(manifest);
       if (elements.playBtn) {
-        elements.playBtn.querySelector(".play-text").textContent =
-          "O'YINNI BOSHLASH";
+        elements.playBtn.querySelector(".play-text").textContent = "O'YINNI BOSHLASH";
         elements.playBtn.disabled = false;
       }
       return manifest;
@@ -32,10 +31,7 @@ const ManifestSync = {
     const files = manifest.files || {};
     const allFiles = [
       ...(files.mods || []).map((f) => ({ ...f, type: "mods" })),
-      ...(files.resourcepacks || []).map((f) => ({
-        ...f,
-        type: "resourcepacks",
-      })),
+      ...(files.resourcepacks || []).map((f) => ({ ...f, type: "resourcepacks" })),
       ...(files.shaders || []).map((f) => ({ ...f, type: "shaders" })),
       ...(files.config || []).map((f) => ({ ...f, type: "config" })),
     ];
@@ -76,7 +72,6 @@ const ManifestSync = {
         }
       }
 
-      // Fayllar ro'yxatida bo'lmagan fayllarni o'chirish (agar kerak bo'lsa)
       const manifestPaths = allFiles.map(
         (f) => `${f.type}/${f.filename || f.name}`,
       );
@@ -87,7 +82,6 @@ const ManifestSync = {
       }
     } catch (error) {
       console.error("Sync files error:", error);
-      // Agar scan ishlamasa, barchasini yuklash
       return { toDownload: allFiles, toDelete: [], verified: 0 };
     }
 
@@ -105,7 +99,6 @@ const ManifestSync = {
 
     let completed = 0;
 
-    // O'chirish
     for (const file of toDelete) {
       try {
         await window.electronAPI.deleteGameFile(
@@ -119,7 +112,6 @@ const ManifestSync = {
       if (onProgress) onProgress(completed, total, `O'chirildi: ${file.path}`);
     }
 
-    // Yuklash
     for (const file of toDownload) {
       const relativePath = `${file.type}/${file.filename || file.name}`;
       const url = file.download_url || file.url;
@@ -158,15 +150,11 @@ const GameLauncher = {
       return;
     }
 
-    // Sync before launch
     UI.showLoading("Fayllar sinxronlanmoqda...");
     try {
       const syncResults = await ManifestSync.syncFiles(AppState.manifest);
 
-      if (
-        syncResults.toDownload.length > 0 ||
-        syncResults.toDelete.length > 0
-      ) {
+      if (syncResults.toDownload.length > 0 || syncResults.toDelete.length > 0) {
         await ManifestSync.executeSync(
           syncResults,
           (completed, total, detail) => {
@@ -179,8 +167,6 @@ const GameLauncher = {
       UI.showLoading("O'yin ishga tushirilmoqda...");
 
       if (isElectron) {
-        AppState.gameStartTime = Date.now();
-
         const launchOptions = {
           server: server,
           manifest: AppState.manifest,
@@ -194,9 +180,6 @@ const GameLauncher = {
           username: AppState.user.username,
           uuid: AppState.user.uuid || AppState.user.id,
           token: AppState.token,
-          jvmArgs: AppState.settings.jvmArgs || "",
-          fullscreen: AppState.settings.fullscreen || false,
-          gameResolution: AppState.settings.gameResolution || "1280x720",
         };
 
         await window.electronAPI.launchGame(launchOptions);
@@ -215,26 +198,6 @@ const GameLauncher = {
       );
     } finally {
       UI.hideLoading();
-    }
-  },
-
-  async savePlaytime(serverId) {
-    if (!isElectron || !AppState.gameStartTime) return;
-    const durationSeconds = Math.floor(
-      (Date.now() - AppState.gameStartTime) / 1000,
-    );
-    if (durationSeconds < 5) return;
-
-    try {
-      const currentSeconds = await window.electronAPI.getPlaytime(serverId);
-      await window.electronAPI.savePlaytime(
-        serverId,
-        (currentSeconds || 0) + durationSeconds,
-      );
-      AppState.gameStartTime = null;
-      UI.updatePlaytimeDisplay(serverId);
-    } catch (error) {
-      console.error("Failed to save playtime:", error);
     }
   },
 

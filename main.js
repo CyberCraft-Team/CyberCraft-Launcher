@@ -94,8 +94,8 @@ async function createWindow() {
   await Storage.load();
 
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 900,
+    height: 600,
     minWidth: 900,
     minHeight: 600,
     frame: false,
@@ -108,6 +108,9 @@ async function createWindow() {
       sandbox: false,
     },
     icon: path.join(__dirname, "assets/icon.png"),
+    maximizable: false,
+    fullscreenable: false,
+    resizable: false,
   });
 
   mainWindow.loadFile("index.html");
@@ -231,7 +234,7 @@ ipcMain.handle("save-settings", async (event, settings) => {
 
 ipcMain.handle("get-system-ram", async () => {
   const totalMemBytes = os.totalmem();
-  const totalMemGB = Math.floor(totalMemBytes / (1024 * 1024 * 1024));
+  const totalMemGB = Math.round(totalMemBytes / (1024 * 1024 * 1024));
   return totalMemGB;
 });
 
@@ -303,14 +306,6 @@ ipcMain.handle("read-crash-log", async () => {
   }
 });
 
-ipcMain.handle("save-playtime", async (event, serverId, seconds) => {
-  Storage.set(`playtime.${serverId}`, seconds);
-  return true;
-});
-
-ipcMain.handle("get-playtime", async (event, serverId) => {
-  return Storage.get(`playtime.${serverId}`, 0);
-});
 
 ipcMain.handle(
   "download-file",
@@ -925,35 +920,6 @@ app.on("activate", () => {
 
 // --- Yo'q bo'lgan IPC handler'lar ---
 
-ipcMain.handle("clear-cache", async () => {
-  const dirs = ["mods", "resourcepacks", "shaderpacks"];
-  for (const dir of dirs) {
-    const dirPath = path.join(CONFIG.GAME_DIR, dir);
-    try {
-      const files = await fs.readdir(dirPath);
-      for (const file of files) {
-        await fs.unlink(path.join(dirPath, file));
-      }
-    } catch (err) {}
-  }
-  return true;
-});
-
-ipcMain.handle("get-cache-size", async () => {
-  let totalSize = 0;
-  const dirs = ["mods", "resourcepacks", "shaderpacks"];
-  for (const dir of dirs) {
-    const dirPath = path.join(CONFIG.GAME_DIR, dir);
-    try {
-      const files = await fs.readdir(dirPath);
-      for (const file of files) {
-        const stat = await fs.stat(path.join(dirPath, file));
-        totalSize += stat.size;
-      }
-    } catch (err) {}
-  }
-  return totalSize;
-});
 
 ipcMain.handle("open-logs-folder", async () => {
   const logsDir = path.join(CONFIG.GAME_DIR, "logs");
@@ -967,16 +933,6 @@ ipcMain.handle("open-game-folder", async () => {
   shell.openPath(CONFIG.GAME_DIR);
 });
 
-ipcMain.handle("set-auto-launch", async (event, enabled) => {
-  app.setLoginItemSettings({ openAtLogin: enabled });
-  return true;
-});
-
-ipcMain.handle("set-discord-rpc", async (event, enabled) => {
-  // Discord RPC placeholder — hozircha faqat sozlama saqlanadi
-  console.log(`[CyberCraft] Discord RPC ${enabled ? "enabled" : "disabled"}`);
-  return true;
-});
 
 function calculateFileHash(filePath) {
   return new Promise((resolve, reject) => {

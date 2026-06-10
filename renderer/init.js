@@ -1,4 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  // Prevent double initialization
+  if (window.__launcherInitialized) return;
+  window.__launcherInitialized = true;
+
   if (typeof initEventListeners === "function") initEventListeners();
 
   // =============================================
@@ -11,7 +15,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (updateInfo && updateInfo.update_available) {
         const currentVersion = await window.electronAPI.getLauncherVersion();
 
-        // Populate modal
         if (elements.updateCurrentVersion)
           elements.updateCurrentVersion.textContent = `v${currentVersion}`;
         if (elements.updateNewVersion)
@@ -27,12 +30,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             "Davom etish uchun yangi versiyani yuklab oling.";
         }
 
-        // Show modal
         if (elements.updateOverlay) {
           elements.updateOverlay.classList.add("active");
         }
 
-        // Download button handler
         if (elements.updateDownloadBtn) {
           elements.updateDownloadBtn.addEventListener("click", async () => {
             elements.updateDownloadBtn.disabled = true;
@@ -45,7 +46,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               elements.updateStatus.textContent = "Yuklab olinmoqda...";
             }
 
-            // Listen for progress
             window.electronAPI.onUpdateProgress((data) => {
               if (elements.updateProgressFill) {
                 elements.updateProgressFill.style.width = `${data.percent}%`;
@@ -69,7 +69,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               }
               elements.updateDownloadBtn.innerHTML = "O'rnatilmoqda...";
 
-              // Small delay then install
               setTimeout(async () => {
                 await window.electronAPI.installUpdate(result.filePath);
               }, 1000);
@@ -88,7 +87,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
         }
 
-        // If forced update, block everything — don't proceed further
         if (updateInfo.force) {
           console.log("[CyberCraft] Forced update required, blocking launcher");
           return;
@@ -96,7 +94,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (err) {
       console.error("[CyberCraft] Update check error:", err);
-      // Continue normally if update check fails
     }
   }
 
@@ -106,9 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const hasSession = await Auth.checkSession();
   if (hasSession) {
     UI.showMain();
-    UI.updateSettingsUI();
-    if (isElectron && typeof UI.calculateCacheSize === "function")
-      UI.calculateCacheSize();
   } else {
     UI.showLogin();
   }
@@ -118,15 +112,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const settings = await window.electronAPI.getSettings();
     if (settings) {
       AppState.settings = { ...AppState.settings, ...settings };
-      if (elements.javaPath) elements.javaPath.value = settings.javaPath || "";
       if (elements.gameDir) elements.gameDir.value = settings.gameDir || "";
       if (elements.settingsRamSlider) {
         elements.settingsRamSlider.value = settings.ram || 4;
-        if (elements.settingsRamValue)
-          elements.settingsRamValue.textContent = `${settings.ram || 4} GB`;
+        if (elements.settingsRamValueMB)
+          elements.settingsRamValueMB.textContent = `${(settings.ram || 4) * 1024} MB`;
       }
-      if (elements.hideOnLaunch)
-        elements.hideOnLaunch.checked = !!settings.hideOnLaunch;
       UI.updateSettingsUI();
     }
 
@@ -149,12 +140,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     });
 
-    // Use onGameClose instead of onGameClosed
     window.electronAPI.onGameClose(async (code) => {
       UI.hideLoading();
-      if (AppState.selectedServer) {
-        await GameLauncher.savePlaytime(AppState.selectedServer.id);
-      }
       if (code === 0) {
         UI.showNotification("O'yin yopildi", "info");
       } else {

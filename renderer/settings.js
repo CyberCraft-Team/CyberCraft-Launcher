@@ -1,30 +1,7 @@
 // =============================================
-// Settings & Event Listeners — CyberCraft Launcher
+// Settings & Event Listeners — CyberCraft Launcher (v2)
 // =============================================
 function initEventListeners() {
-  // ======= Navigation =======
-  document.querySelectorAll(".nav-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      const targetPage = item.dataset.page;
-      if (!targetPage) return;
-
-      document
-        .querySelectorAll(".nav-item")
-        .forEach((nav) => nav.classList.remove("active"));
-      item.classList.add("active");
-
-      document.querySelectorAll(".main-content .page").forEach((page) => {
-        page.classList.remove("active");
-        if (page.id === targetPage) page.classList.add("active");
-      });
-
-      // News sahifasi ochilganda
-      if (targetPage === "news") {
-        UI.renderNewsList();
-      }
-    });
-  });
-
   // ======= Window Controls =======
   document.getElementById("minimizeBtn")?.addEventListener("click", () => {
     if (isElectron) window.electronAPI.minimize();
@@ -70,8 +47,7 @@ function initEventListeners() {
   }
 
   // ======= Logout =======
-  elements.logoutBtn?.addEventListener("click", () => Auth.logout());
-  elements.logoutSettings?.addEventListener("click", () => {
+  elements.logoutBtn?.addEventListener("click", () => {
     UI.showConfirmDialog(
       "Hisobdan chiqish",
       "Hisobingizdan chiqishni tasdiqlaysizmi?",
@@ -80,18 +56,12 @@ function initEventListeners() {
     );
   });
 
-  // ======= Server Selection =======
-  elements.serverSelect?.addEventListener("change", (e) => {
-    if (e.target.value) UI.selectServer(e.target.value);
-  });
-
-  // Server card click delegation
-  if (elements.serversList) {
-    elements.serversList.addEventListener("click", (e) => {
-      const btn = e.target.closest(".select-btn");
-      if (btn && !btn.disabled) {
-        const card = btn.closest(".server-card");
-        if (card) UI.selectServer(card.dataset.serverId);
+  // ======= Server List (Bottom Bar) =======
+  if (elements.serverIconList) {
+    elements.serverIconList.addEventListener("click", (e) => {
+      const item = e.target.closest(".server-icon-item");
+      if (item) {
+        UI.showServerDetail(item.dataset.serverId);
       }
     });
   }
@@ -109,181 +79,108 @@ function initEventListeners() {
     }
   });
 
-  // ======= News Click Handlers =======
-  if (elements.newsGrid) {
-    elements.newsGrid.addEventListener("click", (e) => {
-      const card = e.target.closest(".news-card");
-      if (card) UI.showNewsModal(card.dataset.newsId);
-    });
-  }
-  if (elements.newsListFull) {
-    elements.newsListFull.addEventListener("click", (e) => {
-      const item = e.target.closest(".news-list-item");
-      if (item) UI.showNewsModal(item.dataset.newsId);
-    });
-  }
-
-  elements.newsModalClose?.addEventListener("click", () => UI.hideNewsModal());
-  if (elements.newsModal) {
-    elements.newsModal.addEventListener("click", (e) => {
-      if (e.target === elements.newsModal) UI.hideNewsModal();
-    });
-  }
-
-  // News filter
-  document.querySelectorAll(".news-filter-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".news-filter-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      AppState.newsFilter = btn.dataset.filter || "all";
-      UI.renderNewsList();
-    });
+  // ======= Favorite Star =======
+  elements.detailFavStar?.addEventListener("click", () => {
+    elements.detailFavStar.classList.toggle("active");
+    if (elements.detailFavStar.classList.contains("active")) {
+      elements.detailFavStar.textContent = "\u2605"; // ★
+    } else {
+      elements.detailFavStar.textContent = "\u2606"; // ☆
+    }
   });
 
-  // ======= Changelog =======
-  document.getElementById("showChangelog")?.addEventListener("click", () => {
-    UI.showChangelog();
+  // ======= Settings Modal Open/Close =======
+  elements.settingsBtn?.addEventListener("click", () => {
+    UI.showSettingsModal();
+    UI.updateSettingsUI();
+  });
+  elements.settingsCloseBtn?.addEventListener("click", () => {
+    UI.hideSettingsModal();
+  });
+  elements.settingsOverlay?.addEventListener("click", (e) => {
+    if (e.target === elements.settingsOverlay) UI.hideSettingsModal();
+  });
+  elements.settingsCancelBtn?.addEventListener("click", () => {
+    UI.hideSettingsModal();
   });
 
-  // ======= Settings — RAM =======
+  // ======= Settings — RAM Slider =======
   elements.settingsRamSlider?.addEventListener("input", (e) => {
-    AppState.settings.ram = parseInt(e.target.value);
-    if (elements.settingsRamValue)
-      elements.settingsRamValue.textContent = `${e.target.value} GB`;
-  });
-  elements.settingsRamSlider?.addEventListener("change", () =>
-    UI.saveSettings(),
-  );
-
-  // ======= Settings — JVM Args =======
-  elements.jvmArgs?.addEventListener("change", (e) => {
-    AppState.settings.jvmArgs = e.target.value;
-    UI.saveSettings();
+    const val = parseInt(e.target.value);
+    AppState.settings.ram = val;
+    if (elements.settingsRamValueMB)
+      elements.settingsRamValueMB.textContent = `${val * 1024} MB`;
   });
 
-  // ======= Settings — Hide On Launch =======
-  elements.hideOnLaunch?.addEventListener("change", (e) => {
-    AppState.settings.hideOnLaunch = e.target.checked;
-    UI.saveSettings();
+  // ======= Settings — Checkboxes =======
+  elements.optimizeJava?.addEventListener("change", (e) => {
+    AppState.settings.optimizeJava = e.target.checked;
   });
-
-  // ======= Settings — Start with Windows =======
-  elements.startWithWindows?.addEventListener("change", (e) => {
-    AppState.settings.startWithWindows = e.target.checked;
-    UI.saveSettings();
-  });
-
-  // ======= Settings — Auto Check Updates =======
-  elements.autoCheckUpdates?.addEventListener("change", (e) => {
-    AppState.settings.autoCheckUpdates = e.target.checked;
-    UI.saveSettings();
-  });
-
-  // ======= Settings — Discord RPC =======
-  elements.discordRPC?.addEventListener("change", (e) => {
-    AppState.settings.discordRPC = e.target.checked;
-    UI.saveSettings();
-  });
-
-  // ======= Settings — Fullscreen =======
-  elements.fullscreen?.addEventListener("change", (e) => {
+  elements.fullscreenMode?.addEventListener("change", (e) => {
     AppState.settings.fullscreen = e.target.checked;
-    UI.saveSettings();
+  });
+  elements.debugMode?.addEventListener("change", (e) => {
+    AppState.settings.debug = e.target.checked;
   });
 
-  // ======= Settings — Game Resolution =======
-  elements.gameResolution?.addEventListener("change", (e) => {
-    AppState.settings.gameResolution = e.target.value;
-    UI.saveSettings();
-  });
-
-  // ======= Settings — Save Logs =======
-  elements.saveLogs?.addEventListener("change", (e) => {
-    AppState.settings.saveLogs = e.target.checked;
-    UI.saveSettings();
-  });
-
-  // ======= Settings — Browse Java =======
-  elements.browseJava?.addEventListener("click", async () => {
+  // ======= Settings — Browse Game Dir =======
+  elements.browseGameDir?.addEventListener("click", async () => {
     if (!isElectron) return;
     try {
-      const result = await window.electronAPI.openFileDialog({
-        title: "Java dasturini tanlang",
-        properties: ["openFile"],
-        filters: [
-          { name: "Java", extensions: ["exe"] },
-          { name: "Barcha fayllar", extensions: ["*"] },
-        ],
+      const result = await window.electronAPI.openFolderDialog({
+        title: "O'yin papkasini tanlang",
       });
       if (result && result.filePaths && result.filePaths[0]) {
-        if (elements.javaPath) elements.javaPath.value = result.filePaths[0];
-        AppState.settings.javaPath = result.filePaths[0];
-        UI.saveSettings();
-        UI.showNotification("Java yo'li saqlandi", "success");
+        if (elements.gameDir) elements.gameDir.value = result.filePaths[0];
+        AppState.settings.gameDir = result.filePaths[0];
       }
     } catch (error) {
-      console.error("Browse Java error:", error);
+      console.error("Browse folder error:", error);
     }
   });
 
   // ======= Settings — Open Game Dir =======
   elements.openGameDir?.addEventListener("click", () => {
-    if (isElectron) window.electronAPI.openGameDir(AppState.selectedServer?.id);
+    if (isElectron) window.electronAPI.openGameFolder();
   });
 
-  // ======= Settings — Open Logs =======
-  elements.openLogs?.addEventListener("click", () => {
-    if (isElectron) window.electronAPI.openLogsFolder();
+  // ======= Settings — Reset Game Dir =======
+  elements.resetGameDir?.addEventListener("click", () => {
+    AppState.settings.gameDir = "";
+    if (elements.gameDir) elements.gameDir.value = "";
+    UI.showNotification("Papka standart holatga tiklandi", "info");
   });
 
-  // ======= Settings — Clear Cache =======
-  elements.clearCache?.addEventListener("click", () => {
+  // ======= Settings — Save Button =======
+  elements.settingsSaveBtn?.addEventListener("click", async () => {
+    await UI.saveSettings();
+    UI.showNotification("Sozlamalar saqlandi", "success");
+    UI.hideSettingsModal();
+  });
+
+  // ======= Settings — Reset All =======
+  elements.settingsResetBtn?.addEventListener("click", () => {
     UI.showConfirmDialog(
-      "Keshni tozalash",
-      "Keshni tozalash barcha yuklab olingan fayllarni o'chiradi. Davom etishni xohlaysizmi?",
+      "Sozlamalarni tiklash",
+      "Barcha sozlamalar standart holatga qaytariladi. Davom etasizmi?",
       async () => {
-        if (isElectron) {
-          try {
-            await window.electronAPI.clearCache();
-            UI.showNotification("Kesh tozalandi", "success");
-            UI.calculateCacheSize();
-          } catch (err) {
-            UI.showNotification("Keshni tozalashda xatolik", "error");
-          }
-        }
+        AppState.settings = {
+          ram: 4,
+          javaPath: "",
+          gameDir: "",
+          hideOnLaunch: true,
+          optimizeJava: true,
+          fullscreen: false,
+          debug: false,
+          redownload: false,
+        };
+        await UI.saveSettings();
+        UI.updateSettingsUI();
+        if (elements.gameDir) elements.gameDir.value = "";
+        UI.showNotification("Sozlamalar tiklandi", "info");
       },
       true,
     );
-  });
-
-  // ======= Skin Yuklash =======
-  const skinUploadBtn = document.getElementById("skinUploadBtn");
-  const skinFileInput = document.getElementById("skinFileInput");
-
-  skinUploadBtn?.addEventListener("click", () => {
-    skinFileInput?.click();
-  });
-
-  skinFileInput?.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.name.endsWith(".png")) {
-      UI.showNotification(
-        "Faqat PNG formatli skin fayl yuklashingiz mumkin",
-        "error",
-      );
-      return;
-    }
-
-    try {
-      await UI.uploadSkin(file);
-      UI.showNotification("Skin muvaffaqiyatli yuklandi!", "success");
-    } catch (error) {
-      UI.showNotification(error.message, "error");
-    }
   });
 
   // ======= Confirm Dialog — Cancel =======

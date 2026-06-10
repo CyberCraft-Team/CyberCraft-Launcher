@@ -1,458 +1,284 @@
 // =============================================
-// UI Module — CyberCraft Launcher
+// UI Module — CyberCraft Launcher (Simplified)
 // =============================================
 const UI = {
   showLogin() {
     if (elements.loginPage) elements.loginPage.style.display = "flex";
     if (elements.mainContainer) elements.mainContainer.style.display = "none";
+    if (elements.titleBarActions)
+      elements.titleBarActions.style.display = "none";
     if (elements.loginError) elements.loginError.textContent = "";
   },
 
   showMain() {
     if (elements.loginPage) elements.loginPage.style.display = "none";
-    if (elements.mainContainer) elements.mainContainer.style.display = "flex";
+    if (elements.mainContainer) elements.mainContainer.style.display = "block";
+    if (elements.titleBarActions)
+      elements.titleBarActions.style.display = "flex";
 
-    if (elements.displayUsername) {
-      elements.displayUsername.textContent =
-        AppState.user?.username || "Player";
+    // Show settings button
+    if (elements.settingsBtn) elements.settingsBtn.style.display = "block";
+
+    if (elements.titleUsername) {
+      elements.titleUsername.textContent = AppState.user?.username || "Player";
+    }
+
+    if (elements.userRankBadge) {
+      elements.userRankBadge.textContent = AppState.user?.rank || "O'yinchi";
+    }
+
+    // Avatar rendering (Image or Letter fallback)
+    const avatarEl = document.getElementById("userAvatarLetter");
+    if (avatarEl && AppState.user) {
+      if (AppState.user.skin_face_url) {
+        avatarEl.style.backgroundImage = `url('${AppState.user.skin_face_url}')`;
+        avatarEl.style.backgroundSize = "cover";
+        avatarEl.style.backgroundPosition = "center";
+        avatarEl.textContent = "";
+        avatarEl.style.border = "1px solid rgba(0, 240, 255, 0.3)";
+      } else {
+        avatarEl.style.backgroundImage = "none";
+        avatarEl.textContent = (AppState.user.username || "P")
+          .charAt(0)
+          .toUpperCase();
+        avatarEl.style.border = "none";
+      }
     }
 
     this.loadServers();
-    this.loadNews();
-    this.updateConnectionStatus("connected");
 
-    if (elements.launcherStatus) {
-      elements.launcherStatus.textContent = "Tayyor";
-      elements.launcherStatus.classList.add("ready");
-    }
-
-    // Serverlarni har 30 sekundda ping qilish
-    if (!AppState.serverPingInterval) {
-      AppState.serverPingInterval = setInterval(() => {
-        this.loadServers();
-      }, 30000);
-    }
   },
 
-  updateConnectionStatus(status) {
-    const statusEl = elements.connectionStatus;
-    if (!statusEl) return;
-    statusEl.className = "connection-status " + status;
+  // ========== PAGE NAVIGATION ==========
 
-    const textEl = statusEl.querySelector(".status-text");
-    if (!textEl) return;
-    switch (status) {
-      case "connected":
-        textEl.textContent = "Ulangan";
-        break;
-      case "error":
-        textEl.textContent = "Xato";
-        break;
-      default:
-        textEl.textContent = "Ulanmoqda...";
+  showServerDetail(serverId) {
+    const server = AppState.servers.find(
+      (s) => String(s.id) === String(serverId),
+    );
+    if (!server) return;
+
+    AppState.selectedServer = server;
+
+    // Update bottom bar active state
+    document.querySelectorAll(".server-icon-item").forEach((item) => {
+      if (item.getAttribute("data-server-id") === String(serverId)) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
+      }
+    });
+    // Dashboard Icon
+    const dashboardIcon = document.getElementById("dashboardServerIcon");
+    if (dashboardIcon) {
+      const isOnline = server.status === "online" || server.status === "running";
+      dashboardIcon.innerHTML = `<img src="${escapeHTML(server.icon_url || "icon.png")}" 
+           onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%2300ffff\'%3E%3Cpath d=\'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5\'/%3E%3C/svg%3E'" 
+           alt="${escapeHTML(server.name)}" />`;
+      
+      if (isOnline) {
+        dashboardIcon.classList.add("online");
+      } else {
+        dashboardIcon.classList.remove("online");
+      }
     }
+
+    // Background transition
+    if (elements.detailBackground) {
+      if (server.background_image_url) {
+        elements.detailBackground.style.backgroundImage = `url("${server.background_image_url}")`;
+        elements.detailBackground.style.opacity = "1";
+      } else {
+        elements.detailBackground.style.backgroundImage = "none";
+        elements.detailBackground.style.opacity = "0.3";
+      }
+    }
+
+    // Highlight active icon
+    document.querySelectorAll(".server-icon-item").forEach((item) => {
+      item.classList.remove("active");
+      if (item.dataset.serverId === String(serverId))
+        item.classList.add("active");
+    });
+
+    // Server name and description
+    if (elements.detailServerName) {
+      elements.detailServerName.textContent = server.name;
+    }
+    if (elements.detailDescription) {
+      elements.detailDescription.textContent =
+        server.description || "Tavsif mavjud emas.";
+    }
+
+    // Category tag
+    if (elements.detailCategory) {
+      elements.detailCategory.textContent = server.category || "Survival";
+    }
+
+    // Online count
+    if (elements.detailOnlineCount) {
+      elements.detailOnlineCount.textContent = server.current_players || 0;
+    }
+
+    // Last wipe
+    if (elements.detailLastWipe) {
+      if (server.last_wipe) {
+        const d = new Date(server.last_wipe);
+        const months = [
+          "Yanvar",
+          "Fevral",
+          "Mart",
+          "Aprel",
+          "May",
+          "Iyun",
+          "Iyul",
+          "Avgust",
+          "Sentabr",
+          "Oktabr",
+          "Noyabr",
+          "Dekabr",
+        ];
+        elements.detailLastWipe.textContent = `${String(d.getDate()).padStart(2, "0")} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      } else {
+        elements.detailLastWipe.textContent = "\u2014";
+      }
+    }
+
+    // Gallery images
+    if (elements.detailGallery) {
+      const images = server.gallery_images || [];
+      if (images.length > 0) {
+        elements.detailGallery.innerHTML = images
+          .slice(0, 4)
+          .map(
+            (img) => `
+            <div class="detail-gallery-item">
+              <img src="${escapeHTML(img.image_url || img.url)}" alt="${escapeHTML(img.caption || server.name)}" loading="lazy" />
+            </div>
+          `,
+          )
+          .join("");
+      } else {
+        // Placeholder images or empty
+        elements.detailGallery.innerHTML = `
+          <div class="detail-gallery-item empty"></div>
+          <div class="detail-gallery-item empty"></div>
+          <div class="detail-gallery-item empty"></div>
+          <div class="detail-gallery-item empty"></div>
+        `;
+      }
+    }
+
+    // Features / MetaMods
+    if (elements.detailFeaturesGrid) {
+      const features = server.features || [];
+      if (features.length > 0) {
+        if (elements.detailFeaturesTitle) {
+          elements.detailFeaturesTitle.textContent =
+            server.modpack_name || "Xususiyatlar";
+        }
+        const iconMap = {
+          sword: "\u2694\uFE0F",
+          shield: "\uD83D\uDEE1\uFE0F",
+          puzzle: "\uD83E\uDDE9",
+          gem: "\uD83D\uDC8E",
+          star: "\u2B50",
+          fire: "\uD83D\uDD25",
+          world: "\uD83C\uDF0D",
+          magic: "\u2728",
+          gear: "\u2699\uFE0F",
+          heart: "\u2764\uFE0F",
+          tree: "\uD83C\uDF33",
+          pickaxe: "\u26CF\uFE0F",
+        };
+        elements.detailFeaturesGrid.innerHTML = features
+          .map(
+            (feat) => `
+            <div class="detail-feature-card">
+              <div class="detail-feature-icon">${iconMap[feat.icon] || "\uD83E\uDDE9"}</div>
+              <h4>${escapeHTML(feat.title)}</h4>
+              <p>${escapeHTML(feat.description)}</p>
+            </div>
+          `,
+          )
+          .join("");
+      } else {
+        elements.detailFeaturesGrid.innerHTML = `
+          <div class="detail-features-empty">Xususiyatlar haqida ma'lumot yo'q</div>
+        `;
+      }
+    }
+
+    if (elements.syncStatus) {
+      elements.syncStatus.textContent = "Sinxronizatsiyaga tayyor";
+    }
+
+    // Fetch manifest
+    ManifestSync.fetchManifest(server);
   },
+
+  // ========== SERVER LIST ==========
 
   async loadServers() {
-    console.log("[v0] loadServers() called");
-
     try {
       const response = await API.request("/api/launcher/servers/");
-
       const servers = Array.isArray(response)
         ? response
         : response.servers || response.results || [];
 
       AppState.servers = servers;
 
+      // Jami onlayn o'yinchilarni hisoblash
+      const totalOnline = servers.reduce(
+        (acc, s) => acc + (s.current_players || 0),
+        0,
+      );
+      if (elements.totalOnlineCount) {
+        elements.totalOnlineCount.textContent = totalOnline;
+      }
+
+      if (!elements.serverIconList) return;
+
       if (servers.length === 0) {
-        if (elements.serversList) {
-          elements.serversList.innerHTML = `
-            <div class="servers-empty">
-              <p>Hozircha serverlar mavjud emas</p>
-            </div>
-          `;
-        }
-        if (elements.serverSelect) {
-          elements.serverSelect.innerHTML =
-            '<option value="">Hozircha serverlar yo\'q</option>';
-        }
+        elements.serverIconList.innerHTML = `
+          <li class="servers-empty">Severlar yo'q</li>
+        `;
         return;
       }
 
-      if (elements.serverSelect) {
-        elements.serverSelect.innerHTML = servers
-          .map(
-            (s) =>
-              `<option value="${escapeHTML(String(s.id))}">${escapeHTML(s.name)} ${s.minecraft_version ? `(${escapeHTML(s.minecraft_version)})` : ""} ${s.status === "offline" ? "[Offline]" : ""}</option>`,
-          )
-          .join("");
-        elements.serverSelect.disabled = false;
-      }
+      elements.serverIconList.innerHTML = servers
+        .map((server) => {
+          const isOnline =
+            server.status === "online" || server.status === "running";
+          const isActive =
+            AppState.selectedServer &&
+            String(AppState.selectedServer.id) === String(server.id);
+          return `
+            <li class="server-icon-item ${isActive ? "active" : ""} ${isOnline ? "online" : "offline"}" 
+                data-server-id="${escapeHTML(String(server.id))}" 
+                onclick="UI.showServerDetail('${escapeHTML(String(server.id))}')"
+                title="${escapeHTML(server.name)}">
+              <img src="${escapeHTML(server.icon_url || "icon.png")}" 
+                   onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%2300ffff\'%3E%3Cpath d=\'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5\'/%3E%3C/svg%3E'" 
+                   alt="${escapeHTML(server.name)}" />
+              <div class="status-indicator"></div>
+            </li>
+          `;
+        })
+        .join("");
 
-      if (elements.serversList) {
-        elements.serversList.innerHTML = servers
-          .map((server) => {
-            const isOnline =
-              server.status === "online" || server.status === "running";
-
-            return `
-              <div class="server-card" data-server-id="${escapeHTML(String(server.id))}">
-                <div class="server-status ${isOnline ? "online" : "offline"}"></div>
-                ${server.icon_url ? `<img src="${escapeHTML(server.icon_url)}" alt="${escapeHTML(server.name)}" class="server-image" />` : ""}
-                <div class="server-info">
-                  <h3>${escapeHTML(server.name)}</h3>
-                  <p>${escapeHTML(server.description || "")}</p>
-                  <span class="server-version">${escapeHTML(server.minecraft_version || "")}</span>
-                </div>
-                <div class="server-stats">
-                  <span class="players">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                    ${server.current_players || 0}/${server.max_players || 0}
-                  </span>
-                </div>
-                <button class="select-btn" ${!isOnline ? "disabled" : ""}>
-                  ${!isOnline ? "Offline" : "Tanlash"}
-                </button>
-              </div>
-            `;
-          })
-          .join("");
-      }
-
-      if (servers.length > 0 && !AppState.selectedServer) {
-        this.selectServer(servers[0].id);
+      // Avto-tanlash birinchi server
+      if (!AppState.selectedServer && servers.length > 0) {
+        this.showServerDetail(servers[0].id);
+      } else if (AppState.selectedServer) {
+        // Refresh detail for current active
+        this.showServerDetail(AppState.selectedServer.id);
       }
     } catch (error) {
       console.error("loadServers error:", error);
-      if (elements.serversList) {
-        elements.serversList.innerHTML = `
-          <div class="servers-error">
-            <p class="error">Serverlarni yuklashda xato: ${error.message}</p>
-          </div>
-        `;
-      }
     }
   },
 
-  async loadNews() {
-    try {
-      const news = await API.request("/api/public/news/");
-      AppState.news = Array.isArray(news) ? news : news.results || [];
-      this.renderNewsGrid();
-      this.renderNewsList();
-    } catch (error) {
-      console.error("Load news error:", error);
-      if (elements.newsGrid) {
-        elements.newsGrid.innerHTML = `<p class="news-loading">Yangiliklar yuklashda xato</p>`;
-      }
-    }
-  },
-
-  renderNewsGrid() {
-    const newsToShow = AppState.news.slice(0, 3);
-    if (!elements.newsGrid) return;
-
-    if (newsToShow.length === 0) {
-      elements.newsGrid.innerHTML = `<p class="news-loading">Yangiliklar topilmadi</p>`;
-      return;
-    }
-
-    elements.newsGrid.innerHTML = newsToShow
-      .map(
-        (item) => `
-      <div class="news-card" data-news-id="${item.id}">
-        <div class="news-image-wrapper">
-          ${
-            item.image_url
-              ? `
-            <div class="news-image" style="background-image: url('${item.image_url}')"></div>
-            <div class="news-image-overlay"></div>
-          `
-              : `
-            <div class="news-image news-image-placeholder">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor" opacity="0.2">
-                <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
-              </svg>
-            </div>
-            <div class="news-image-overlay"></div>
-          `
-          }
-          <div class="news-category-badge">
-            <span class="news-category" style="background: ${item.category_color}40; color: ${item.category_color}; border: 1px solid ${item.category_color}60">
-              ${item.category}
-            </span>
-          </div>
-        </div>
-        <div class="news-content">
-          <div class="news-meta">
-            <span class="news-date">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-              </svg>
-              ${new Date(item.date).toLocaleDateString("uz-UZ", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-            <span class="news-divider"></span>
-            <span class="news-author-info">
-              <div class="news-author-avatar">${item.author?.charAt(0).toUpperCase() || "A"}</div>
-              ${item.author}
-            </span>
-          </div>
-          <h3>${escapeHTML(item.title)}</h3>
-          <p>${escapeHTML(item.excerpt)}</p>
-          <div class="news-read-more">
-            <span>To'liq o'qish</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
-        </div>
-      </div>
-    `,
-      )
-      .join("");
-  },
-
-  renderNewsList() {
-    if (!elements.newsListFull) return;
-
-    const filteredNews =
-      AppState.newsFilter === "all"
-        ? AppState.news
-        : AppState.news.filter((n) => n.category === AppState.newsFilter);
-
-    if (filteredNews.length === 0) {
-      elements.newsListFull.innerHTML = `<p class="news-loading">Yangiliklar topilmadi</p>`;
-      return;
-    }
-
-    elements.newsListFull.innerHTML = filteredNews
-      .map(
-        (item) => `
-      <div class="news-list-item" data-news-id="${item.id}">
-        <div class="news-list-image-wrapper">
-          ${
-            item.image_url
-              ? `
-            <div class="news-list-image" style="background-image: url('${item.image_url}')"></div>
-            <div class="news-list-image-overlay"></div>
-          `
-              : `
-            <div class="news-list-image news-list-image-placeholder">
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor" opacity="0.2">
-                <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
-              </svg>
-            </div>
-            <div class="news-list-image-overlay"></div>
-          `
-          }
-          <div class="news-list-category-badge">
-            <span class="news-category" style="background: ${item.category_color}40; color: ${item.category_color}; border: 1px solid ${item.category_color}60">
-              ${item.category}
-            </span>
-          </div>
-        </div>
-        <div class="news-list-content">
-          <div class="news-list-meta">
-            <span class="news-date">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-              </svg>
-              ${new Date(item.date).toLocaleDateString("uz-UZ", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-            <span class="news-divider"></span>
-            <span class="news-author-info">
-              <div class="news-author-avatar">${item.author?.charAt(0).toUpperCase() || "A"}</div>
-              ${item.author}
-            </span>
-          </div>
-          <h3>${escapeHTML(item.title)}</h3>
-          <p>${escapeHTML(item.excerpt)}</p>
-          <div class="news-list-footer">
-            <span class="news-read-more">
-              Batafsil o'qish
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 5l7 7-7 7"/>
-              </svg>
-            </span>
-          </div>
-        </div>
-      </div>
-    `,
-      )
-      .join("");
-  },
-
-  showNewsModal(newsId) {
-    const news = AppState.news.find((n) => n.id === Number.parseInt(newsId));
-    if (!news) return;
-
-    AppState.selectedNews = news;
-
-    if (elements.newsModalHeader) {
-      elements.newsModalHeader.style.backgroundImage = news.image_url
-        ? `url('${news.image_url}')`
-        : "";
-    }
-    if (elements.newsModalMeta) {
-      elements.newsModalMeta.innerHTML = `
-        <span class="news-category" style="background: ${news.category_color}20; color: ${news.category_color}">
-          ${news.category}
-        </span>
-        <span class="news-date">${new Date(news.date).toLocaleDateString("uz-UZ")}</span>
-        <span class="news-author">Muallif: ${news.author}</span>
-      `;
-    }
-    if (elements.newsModalTitle)
-      elements.newsModalTitle.textContent = news.title;
-    if (elements.newsModalText) {
-      elements.newsModalText.innerHTML = `<p>${escapeHTML(news.content || news.excerpt)}</p>`;
-    }
-    if (elements.newsModal) elements.newsModal.classList.add("active");
-  },
-
-  showChangelog() {
-    const changelog = [
-      {
-        version: "v2.1.0",
-        date: "2024-02-21",
-        changes: [
-          "Modular renderer arxitekturasi",
-          "Real-time server ping",
-          "O'yin vaqti tracking",
-          "Crash reporter",
-          "System Tray integratsiyasi",
-          "Download retry (3 marta)",
-        ],
-      },
-      {
-        version: "v2.0.5",
-        date: "2024-02-15",
-        changes: [
-          "NeoForge 1.21.4 qo'llab-quvvatlash",
-          "Java 21 avtomatik aniqlash",
-          "Launcher dizayni yangilanishi",
-        ],
-      },
-    ];
-
-    AppState.selectedNews = { title: "Launcher Changelog" };
-    if (elements.newsModalHeader)
-      elements.newsModalHeader.style.backgroundImage =
-        "linear-gradient(135deg, var(--primary), var(--secondary))";
-    if (elements.newsModalMeta)
-      elements.newsModalMeta.innerHTML = `<span class="news-date">Oxirgi yangilanish: ${changelog[0].date}</span>`;
-    if (elements.newsModalTitle)
-      elements.newsModalTitle.textContent = "CyberCraft Launcher Changelog";
-
-    let html = '<div style="padding: 10px 0;">';
-    changelog.forEach((item) => {
-      html += `
-        <div style="margin-bottom: 25px; border-left: 2px solid var(--primary); padding-left: 15px;">
-          <h3 style="color: var(--primary); margin-bottom: 8px;">${item.version} <span style="font-size: 0.8em; color: var(--text-dim); font-weight: normal; margin-left: 10px;">${item.date}</span></h3>
-          <ul style="padding-left: 0; list-style: none; color: #ccc;">
-            ${item.changes.map((c) => `<li style="margin-bottom: 6px; position: relative; padding-left: 20px;"><span style="position: absolute; left: 0; color: var(--secondary);">▶</span> ${c}</li>`).join("")}
-          </ul>
-        </div>
-      `;
-    });
-    html += "</div>";
-
-    if (elements.newsModalText) elements.newsModalText.innerHTML = html;
-    if (elements.newsModal) elements.newsModal.classList.add("active");
-  },
-
-  hideNewsModal() {
-    if (elements.newsModal) elements.newsModal.classList.remove("active");
-    AppState.selectedNews = null;
-  },
-
-  async selectServer(serverId) {
-    const server = AppState.servers.find(
-      (s) => String(s.id) === String(serverId),
-    );
-    if (!server) {
-      console.error("Server not found:", serverId);
-      return;
-    }
-
-    AppState.selectedServer = server;
-    if (elements.serverSelect) elements.serverSelect.value = serverId;
-
-    document.querySelectorAll(".server-card").forEach((card) => {
-      card.classList.toggle(
-        "selected",
-        card.dataset.serverId === String(serverId),
-      );
-    });
-
-    // Update Hero Section
-    const heroServerName = document.getElementById("heroServerName");
-    const heroSubtitle = document.getElementById("heroServerSubtitle");
-    const heroBg = document.getElementById("heroBg");
-
-    if (heroServerName) {
-      heroServerName.textContent = server.name;
-      heroServerName.setAttribute("data-text", server.name);
-    }
-    if (heroSubtitle) {
-      heroSubtitle.textContent =
-        server.description || `${server.minecraft_version || ""} Server`;
-    }
-    if (heroBg && server.background_image_url) {
-      heroBg.style.backgroundImage = `url('${server.background_image_url}')`;
-      heroBg.style.backgroundSize = "cover";
-      heroBg.style.backgroundPosition = "center";
-    } else if (heroBg) {
-      heroBg.style.backgroundImage = "";
-    }
-
-    // Update Server Info Cards
-    const serverInfoSection = document.getElementById("serverInfoSection");
-    const serverPlayers = document.getElementById("serverPlayers");
-    const serverVersion = document.getElementById("serverVersion");
-    const serverStatus = document.getElementById("serverStatus");
-
-    if (serverInfoSection) serverInfoSection.style.display = "block";
-    if (serverPlayers)
-      serverPlayers.textContent = `${server.current_players || 0}/${server.max_players || 20}`;
-    if (serverVersion)
-      serverVersion.textContent = server.minecraft_version || "Unknown";
-    if (serverStatus) {
-      const isOnline =
-        server.status === "online" || server.status === "running";
-      serverStatus.textContent = isOnline ? "Online" : "Offline";
-      serverStatus.style.color = isOnline ? "var(--accent)" : "var(--error)";
-    }
-
-    // Playtime
-    this.updatePlaytimeDisplay(server.id);
-
-    ManifestSync.fetchManifest(server);
-  },
-
-  async updatePlaytimeDisplay(serverId) {
-    if (!elements.playtimeDisplay) return;
-    if (isElectron) {
-      try {
-        const seconds = await window.electronAPI.getPlaytime(serverId);
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        elements.playtimeDisplay.textContent =
-          hours > 0 ? `${hours} soat ${minutes} daqiqa` : `${minutes} daqiqa`;
-      } catch (e) {
-        elements.playtimeDisplay.textContent = "0 daqiqa";
-      }
-    }
-  },
+  // ========== MANIFEST ==========
 
   updateManifestStatus(status, text) {
     const badge = elements.manifestBadge;
@@ -493,6 +319,85 @@ const UI = {
     );
   },
 
+  // ========== SETTINGS MODAL ==========
+
+  showSettingsModal() {
+    if (elements.settingsOverlay)
+      elements.settingsOverlay.classList.add("active");
+  },
+
+  hideSettingsModal() {
+    if (elements.settingsOverlay)
+      elements.settingsOverlay.classList.remove("active");
+  },
+
+  async updateSettingsUI() {
+    const s = AppState.settings;
+
+    // Detect system RAM if in Electron
+    if (isElectron && !AppState.systemRamDetected) {
+      try {
+        const totalRamGB = await window.electronAPI.getSystemRam();
+        if (totalRamGB) {
+          AppState.totalSystemRam = totalRamGB;
+          AppState.systemRamDetected = true;
+
+          // Update Slider Max
+          if (elements.settingsRamSlider) {
+            elements.settingsRamSlider.max = totalRamGB;
+
+            // Generate visual marks dynamically
+            const marksContainer = document.getElementById("ramMarks");
+            if (marksContainer) {
+              marksContainer.innerHTML = "";
+              // Show marks for every 1GB up to system RAM
+              for (let i = 1; i <= totalRamGB; i++) {
+                const span = document.createElement("span");
+                const percent =
+                  totalRamGB > 1 ? ((i - 1) / (totalRamGB - 1)) * 100 : 0;
+                span.style.left = `${percent}%`;
+                span.textContent = `${i}GB`;
+                marksContainer.appendChild(span);
+              }
+            }
+          }
+
+          // If current RAM setting is higher than system, reset it
+          if (s.ram > totalRamGB) {
+            s.ram = Math.floor(totalRamGB / 2);
+          }
+        }
+      } catch (err) {
+        console.error("RAM detection error:", err);
+      }
+    }
+
+    if (elements.settingsRamSlider) {
+      elements.settingsRamSlider.value = s.ram;
+      if (elements.settingsRamValueMB)
+        elements.settingsRamValueMB.textContent = `${s.ram * 1024} MB`;
+    }
+    if (elements.optimizeJava)
+      elements.optimizeJava.checked = s.optimizeJava !== false;
+    if (elements.fullscreenMode)
+      elements.fullscreenMode.checked = !!s.fullscreen;
+    if (elements.debugMode) elements.debugMode.checked = !!s.debug;
+    if (elements.redownloadFiles) elements.redownloadFiles.checked = false; // Always reset
+  },
+
+  async saveSettings() {
+    if (isElectron) {
+      await window.electronAPI.saveSettings(AppState.settings);
+    } else {
+      localStorage.setItem(
+        "launcher_settings",
+        JSON.stringify(AppState.settings),
+      );
+    }
+  },
+
+  // ========== NOTIFICATIONS ==========
+
   showNotification(message, type = "info") {
     const container =
       document.getElementById("notificationContainer") ||
@@ -500,7 +405,7 @@ const UI = {
         const div = document.createElement("div");
         div.id = "notificationContainer";
         div.style.cssText =
-          "position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;pointer-events:none;";
+          "position:fixed;top:48px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;pointer-events:none;";
         document.body.appendChild(div);
         return div;
       })();
@@ -544,6 +449,8 @@ const UI = {
     }, 4000);
   },
 
+  // ========== LOADING ==========
+
   showLoading(text = "Yuklanmoqda...") {
     if (elements.loadingOverlay) elements.loadingOverlay.style.display = "flex";
     if (elements.loadingText) elements.loadingText.textContent = text;
@@ -564,101 +471,7 @@ const UI = {
       elements.syncDetails.textContent = details;
   },
 
-  updateSettingsUI() {
-    const s = AppState.settings;
-
-    if (elements.settingsRamSlider) {
-      elements.settingsRamSlider.value = s.ram;
-      if (elements.settingsRamValue)
-        elements.settingsRamValue.textContent = `${s.ram} GB`;
-    }
-    if (elements.jvmArgs) elements.jvmArgs.value = s.jvmArgs || "";
-    if (elements.hideOnLaunch) elements.hideOnLaunch.checked = !!s.hideOnLaunch;
-    if (elements.startWithWindows)
-      elements.startWithWindows.checked = !!s.startWithWindows;
-    if (elements.autoCheckUpdates)
-      elements.autoCheckUpdates.checked = !!s.autoCheckUpdates;
-    if (elements.discordRPC) elements.discordRPC.checked = !!s.discordRPC;
-    if (elements.fullscreen) elements.fullscreen.checked = !!s.fullscreen;
-    if (elements.gameResolution)
-      elements.gameResolution.value = s.gameResolution;
-    if (elements.saveLogs) elements.saveLogs.checked = !!s.saveLogs;
-
-    if (AppState.user) {
-      const settingsUsername = document.getElementById("settingsUsername");
-      const settingsEmail = document.getElementById("settingsEmail");
-      const settingsWhitelist = document.getElementById("settingsWhitelist");
-      const settingsUserAvatar = document.getElementById("settingsUserAvatar");
-      const userAvatar = document.getElementById("userAvatar");
-
-      if (settingsUsername)
-        settingsUsername.textContent =
-          AppState.user.username || "Foydalanuvchi";
-      if (settingsEmail)
-        settingsEmail.textContent =
-          AppState.user.email || "Email ko'rsatilmagan";
-
-      if (settingsWhitelist) {
-        if (AppState.user.is_whitelisted) {
-          settingsWhitelist.className = "detail-value status-badge whitelisted";
-          settingsWhitelist.innerHTML =
-            '<span class="status-indicator"></span>Whitelist';
-        } else {
-          settingsWhitelist.className =
-            "detail-value status-badge not-whitelisted";
-          settingsWhitelist.innerHTML =
-            '<span class="status-indicator"></span>Whitelistda emas';
-        }
-      }
-
-      // Avatar fallback — icon.png ishlatiladi agar skin yo'q
-      const avatarUrl = AppState.user.skin_face_url || "icon.png";
-      if (settingsUserAvatar) settingsUserAvatar.src = avatarUrl;
-      if (userAvatar) userAvatar.src = avatarUrl;
-    }
-  },
-
-  async uploadSkin(file) {
-    const formData = new FormData();
-    formData.append("skin", file);
-
-    try {
-      const response = await fetch(
-        `${CONFIG.API_BASE_URL}/api/auth/launcher/skin/`,
-        {
-          method: "POST",
-          headers: { Authorization: `Token ${AppState.token}` },
-          body: formData,
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Skin yuklashda xatolik");
-      }
-
-      const data = await response.json();
-      if (data.skin_face_url) {
-        AppState.user.skin_face_url = data.skin_face_url;
-        this.updateSettingsUI();
-      }
-      return data;
-    } catch (error) {
-      console.error("Skin upload error:", error);
-      throw error;
-    }
-  },
-
-  async saveSettings() {
-    if (isElectron) {
-      await window.electronAPI.saveSettings(AppState.settings);
-    } else {
-      localStorage.setItem(
-        "launcher_settings",
-        JSON.stringify(AppState.settings),
-      );
-    }
-  },
+  // ========== CONFIRM DIALOG ==========
 
   showConfirmDialog(title, message, onConfirm, isDanger = false) {
     const dialog = document.getElementById("confirmDialog");
@@ -684,21 +497,5 @@ const UI = {
   hideConfirmDialog() {
     const dialog = document.getElementById("confirmDialog");
     if (dialog) dialog.classList.remove("active");
-  },
-
-  async calculateCacheSize() {
-    const cacheEl = document.getElementById("cacheSize");
-    if (!cacheEl) return;
-
-    if (isElectron) {
-      try {
-        const size = await window.electronAPI.getCacheSize();
-        cacheEl.textContent = `${(size / 1024 / 1024).toFixed(2)} MB ishlatilmoqda`;
-      } catch {
-        cacheEl.textContent = "Hisoblab bo'lmadi";
-      }
-    } else {
-      cacheEl.textContent = "Demo rejimda mavjud emas";
-    }
   },
 };

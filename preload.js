@@ -33,12 +33,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   launchGame: (options) => ipcRenderer.invoke("launch-game", options),
 
   // Yo'q bo'lgan API'lar
-  clearCache: () => ipcRenderer.invoke("clear-cache"),
-  getCacheSize: () => ipcRenderer.invoke("get-cache-size"),
   openLogsFolder: () => ipcRenderer.invoke("open-logs-folder"),
   openGameFolder: () => ipcRenderer.invoke("open-game-folder"),
-  setAutoLaunch: (enabled) => ipcRenderer.invoke("set-auto-launch", enabled),
-  setDiscordRPC: (enabled) => ipcRenderer.invoke("set-discord-rpc", enabled),
 
   // IPC listener'lar (cleanup bilan)
   onLaunchProgress: (callback) => {
@@ -62,11 +58,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("game-error", (event, error) => callback(error));
   },
 
-  // Crash log va Playtime
+  // Crash log
   readCrashLog: () => ipcRenderer.invoke("read-crash-log"),
-  getPlaytime: (serverId) => ipcRenderer.invoke("get-playtime", serverId),
-  savePlaytime: (serverId, seconds) =>
-    ipcRenderer.invoke("save-playtime", serverId, seconds),
 
   // Auto-Update
   checkForUpdate: () => ipcRenderer.invoke("check-for-update"),
