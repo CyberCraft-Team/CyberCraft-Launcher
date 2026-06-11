@@ -220,7 +220,7 @@ const UI = {
 
   async loadServers() {
     try {
-      const response = await API.request("/api/launcher/servers/");
+      const response = await API.request("/launcher/servers/");
       const servers = Array.isArray(response)
         ? response
         : response.servers || response.results || [];

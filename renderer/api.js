@@ -17,7 +17,7 @@ const API = {
     }
 
     try {
-      const fullUrl = `${CONFIG.API_BASE_URL}${endpoint}`;
+      const fullUrl = `${CONFIG.API_BASE_URL}${CONFIG.API_PREFIX}${endpoint}`;
 
       const response = await fetch(fullUrl, {
         ...options,
@@ -57,7 +57,7 @@ const API = {
     );
 
     // Login
-    if (endpoint === "/api/auth/launcher/login/") {
+    if (endpoint === "/auth/launcher/login/") {
       return {
         token: "demo-token-12345",
         user: {
@@ -71,7 +71,7 @@ const API = {
     }
 
     // Me
-    if (endpoint === "/api/auth/launcher/me/") {
+    if (endpoint === "/auth/launcher/me/") {
       return {
         id: 1,
         username: "DemoPlayer",
@@ -82,12 +82,12 @@ const API = {
     }
 
     // Logout
-    if (endpoint === "/api/auth/launcher/logout/") {
+    if (endpoint === "/auth/launcher/logout/") {
       return { success: true };
     }
 
     // Server list
-    if (endpoint === "/api/launcher/servers/") {
+    if (endpoint === "/launcher/servers/") {
       return [
         {
           id: 1,
@@ -135,7 +135,7 @@ const API = {
     }
 
     // News
-    if (endpoint === "/api/public/news/") {
+    if (endpoint === "/public/news/") {
       return [
         {
           id: 1,
@@ -158,7 +158,7 @@ const API = {
 
 const Auth = {
   async login(username, password) {
-    const response = await API.request("/api/auth/launcher/login/", {
+    const response = await API.request("/auth/launcher/login/", {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
@@ -189,7 +189,7 @@ const Auth = {
   async logout() {
     try {
       if (AppState.token) {
-        await API.request("/api/auth/launcher/logout/", { method: "POST" });
+        await API.request("/auth/launcher/logout/", { method: "POST" });
       }
     } catch (error) {
       console.error("Logout request error:", error);
@@ -231,7 +231,7 @@ const Auth = {
     if (token) {
       AppState.token = token;
       try {
-        const meResponse = await API.request("/api/auth/launcher/me/");
+        const meResponse = await API.request("/auth/launcher/me/");
         AppState.user = meResponse.user || meResponse;
         AppState.isAuthenticated = true;
         if (isElectron) {

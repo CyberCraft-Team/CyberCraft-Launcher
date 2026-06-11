@@ -2,6 +2,8 @@ const CONFIG = {
   API_BASE_URL:
     (typeof window !== "undefined" && window.CYBERCRAFT_API_URL) ||
     "http://127.0.0.1:8000",
+  // API versiya prefiksi — barcha endpointlar shu ostida
+  API_PREFIX: "/api/v1",
   DEMO_MODE: false,
 };
 

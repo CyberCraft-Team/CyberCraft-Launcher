@@ -27,7 +27,7 @@ const DIR_MAP = {
 const CONFIG = {
   GAME_DIR: path.join(app.getPath("appData"), "CyberCraft"),
   JAVA_MIN_VERSION: 21,
-  API_BASE_URL: "http://127.0.0.1:8000",
+  API_BASE_URL: process.env.CYBERCRAFT_API_URL || "http://127.0.0.1:8000",
 };
 
 const DATA_FILE = path.join(app.getPath("userData"), "launcher-data.json");
@@ -707,7 +707,7 @@ ipcMain.handle("launch-game", async (event, options) => {
 // =============================================
 
 function createAuthSession(token) {
-  const url = `${CONFIG.API_BASE_URL}/api/minecraft/session/create/`;
+  const url = `${CONFIG.API_BASE_URL}/api/v1/minecraft/session/create/`;
 
   return new Promise((resolve) => {
     const protocol = url.startsWith("https") ? https : http;
@@ -769,7 +769,7 @@ function createAuthSession(token) {
 async function checkForUpdate() {
   const currentVersion = app.getVersion();
   const platform = process.platform;
-  const url = `${CONFIG.API_BASE_URL}/api/launcher/update/?version=${currentVersion}&platform=${platform}`;
+  const url = `${CONFIG.API_BASE_URL}/api/v1/launcher/update/?version=${currentVersion}&platform=${platform}`;
 
   console.log(
     `[CyberCraft] Checking for updates... (v${currentVersion}, ${platform})`,

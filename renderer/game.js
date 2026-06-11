@@ -6,7 +6,7 @@ const ManifestSync = {
     UI.updateManifestStatus("syncing", "Sinxronlanmoqda...");
     try {
       const serverId = server.id;
-      const manifest = await API.request(`/api/servers/${serverId}/manifest/`);
+      const manifest = await API.request(`/launcher/servers/${serverId}/manifest/`);
       AppState.manifest = manifest;
       UI.updateManifestStats(manifest);
       if (elements.playBtn) {
