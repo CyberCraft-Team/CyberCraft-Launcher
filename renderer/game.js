@@ -29,11 +29,12 @@ const ManifestSync = {
     if (!isElectron) return { toDownload: [], toDelete: [], verified: 0 };
 
     const files = manifest.files || {};
+
+    // Manifest dagi fayllarni category bilan birga yig'ish
     const allFiles = [
-      ...(files.mods || []).map((f) => ({ ...f, type: "mods" })),
-      ...(files.resourcepacks || []).map((f) => ({ ...f, type: "resourcepacks" })),
-      ...(files.shaders || []).map((f) => ({ ...f, type: "shaders" })),
-      ...(files.config || []).map((f) => ({ ...f, type: "config" })),
+      ...(files.mods || []).map((f) => ({ ...f, category: "mods" })),
+      ...(files.resourcepacks || []).map((f) => ({ ...f, category: "resourcepacks" })),
+      ...(files.shaders || []).map((f) => ({ ...f, category: "shaders" })),
     ];
 
     if (allFiles.length === 0) {
@@ -45,43 +46,47 @@ const ManifestSync = {
     let verified = 0;
 
     try {
-      const existingFiles = await window.electronAPI.scanGameFolder(
-        AppState.selectedServer.id,
-      );
+      // scanGameFolder() — parametrsiz, global scan
+      // Qaytaradi: { mods: [{name, hash, size}], resourcepacks: [...], shaders: [...] }
+      const existingFiles = await window.electronAPI.scanGameFolder();
 
       for (const file of allFiles) {
-        const relativePath = `${file.type}/${file.filename || file.name}`;
-        const existingFile = existingFiles.find(
-          (ef) => ef.path === relativePath,
-        );
+        const fileName = file.name || file.filename;
+        const category = file.category;
+
+        // Shu categorydagi mavjud fayllarni topish
+        const categoryFiles = existingFiles[category] || [];
+        const existingFile = categoryFiles.find((ef) => ef.name === fileName);
 
         if (!existingFile) {
+          // Fayl yo'q — yuklab olish kerak
           toDownload.push(file);
-        } else if (file.hash || file.md5) {
-          const localHash = await window.electronAPI.checkFileHash(
-            AppState.selectedServer.id,
-            relativePath,
-          );
-          if (localHash !== (file.hash || file.md5)) {
-            toDownload.push(file);
-          } else {
-            verified++;
-          }
+        } else if (file.hash && existingFile.hash !== file.hash) {
+          // Hash mos kelmaydi — qayta yuklab olish kerak
+          toDownload.push(file);
         } else {
           verified++;
         }
       }
 
-      const manifestPaths = allFiles.map(
-        (f) => `${f.type}/${f.filename || f.name}`,
-      );
-      for (const existing of existingFiles) {
-        if (!manifestPaths.includes(existing.path)) {
-          toDelete.push(existing);
+      // Manifestda yo'q lekin diskda bor fayllarni aniqlash (o'chirish uchun)
+      const categories = ["mods", "resourcepacks", "shaders"];
+      for (const category of categories) {
+        const manifestFiles = (files[category] || []).map(
+          (f) => f.name || f.filename,
+        );
+        const localFiles = existingFiles[category] || [];
+
+        for (const localFile of localFiles) {
+          if (!manifestFiles.includes(localFile.name)) {
+            toDelete.push({ name: localFile.name, category: category });
+          }
         }
       }
     } catch (error) {
       console.error("Sync files error:", error);
+      UI.showNotification("Fayllarni tekshirishda xato yuz berdi", "warning");
+      // Xatolik bo'lsa, hamma faylni yuklab olish kerak
       return { toDownload: allFiles, toDelete: [], verified: 0 };
     }
 
@@ -98,44 +103,67 @@ const ManifestSync = {
     }
 
     let completed = 0;
+    let hasErrors = false;
 
+    // O'chirish
     for (const file of toDelete) {
       try {
-        await window.electronAPI.deleteGameFile(
-          AppState.selectedServer.id,
-          file.path,
-        );
+        await window.electronAPI.deleteFile(file.category, file.name);
       } catch (err) {
-        console.warn(`Failed to delete ${file.path}:`, err);
-      }
-      completed++;
-      if (onProgress) onProgress(completed, total, `O'chirildi: ${file.path}`);
-    }
-
-    for (const file of toDownload) {
-      const relativePath = `${file.type}/${file.filename || file.name}`;
-      const url = file.download_url || file.url;
-
-      try {
-        await window.electronAPI.downloadFile(
-          url,
-          AppState.selectedServer.id,
-          relativePath,
-        );
-      } catch (err) {
-        console.error(`Failed to download ${relativePath}:`, err);
-        UI.showNotification(
-          `Yuklab olishda xato: ${file.filename || file.name}`,
-          "error",
-        );
+        console.warn(`Failed to delete ${file.category}/${file.name}:`, err);
       }
       completed++;
       if (onProgress)
-        onProgress(completed, total, `Yuklandi: ${file.filename || file.name}`);
+        onProgress(completed, total, `O'chirildi: ${file.name}`);
     }
 
-    UI.updateManifestStatus("synced", "Sinxronlangan");
-    return true;
+    // Yuklab olish
+    for (const file of toDownload) {
+      const fileName = file.name || file.filename;
+      const url = file.url || file.download_url;
+      const hash = file.hash || "";
+
+      if (!url) {
+        console.warn(`No download URL for ${fileName}, skipping`);
+        completed++;
+        continue;
+      }
+
+      try {
+        const result = await window.electronAPI.downloadFile(
+          file.category,
+          fileName,
+          url,
+          hash,
+        );
+
+        if (result && !result.success) {
+          console.error(`Download failed for ${fileName}:`, result.error);
+          UI.showNotification(
+            `Yuklab olishda xato: ${fileName}`,
+            "error",
+          );
+          hasErrors = true;
+        }
+      } catch (err) {
+        console.error(`Failed to download ${fileName}:`, err);
+        UI.showNotification(
+          `Yuklab olishda xato: ${fileName}`,
+          "error",
+        );
+        hasErrors = true;
+      }
+      completed++;
+      if (onProgress)
+        onProgress(completed, total, `Yuklandi: ${fileName}`);
+    }
+
+    if (hasErrors) {
+      UI.updateManifestStatus("error", "Ba'zi fayllar yuklanmadi");
+    } else {
+      UI.updateManifestStatus("synced", "Sinxronlangan");
+    }
+    return !hasErrors;
   },
 };
 
@@ -155,13 +183,20 @@ const GameLauncher = {
       const syncResults = await ManifestSync.syncFiles(AppState.manifest);
 
       if (syncResults.toDownload.length > 0 || syncResults.toDelete.length > 0) {
-        await ManifestSync.executeSync(
+        const syncOk = await ManifestSync.executeSync(
           syncResults,
           (completed, total, detail) => {
             const percent = Math.round((completed / total) * 100);
             UI.updateProgress(percent, detail);
           },
         );
+
+        if (!syncOk) {
+          UI.showNotification(
+            "Ba'zi fayllar sinxronlanmadi. O'yin ishga tushirilmoqda...",
+            "warning",
+          );
+        }
       }
 
       UI.showLoading("O'yin ishga tushirilmoqda...");
@@ -182,7 +217,20 @@ const GameLauncher = {
           token: AppState.token,
         };
 
-        await window.electronAPI.launchGame(launchOptions);
+        const result = await window.electronAPI.launchGame(launchOptions);
+
+        if (result && !result.success) {
+          UI.hideLoading();
+          if (result.javaError) {
+            UI.showNotification(result.error, "error");
+          } else {
+            UI.showNotification(
+              "O'yinni ishga tushirishda xato: " + result.error,
+              "error",
+            );
+          }
+          return;
+        }
 
         if (AppState.settings.hideOnLaunch) {
           window.electronAPI.minimize();

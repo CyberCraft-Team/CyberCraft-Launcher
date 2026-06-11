@@ -211,7 +211,6 @@ const UI = {
     if (elements.syncStatus) {
       elements.syncStatus.textContent = "Sinxronizatsiyaga tayyor";
     }
-
     // Fetch manifest
     ManifestSync.fetchManifest(server);
   },
@@ -270,11 +269,106 @@ const UI = {
       if (!AppState.selectedServer && servers.length > 0) {
         this.showServerDetail(servers[0].id);
       } else if (AppState.selectedServer) {
-        // Refresh detail for current active
-        this.showServerDetail(AppState.selectedServer.id);
+        // Tanlangan serverni yangilash (status, player count)
+        const updatedServer = servers.find(
+          (s) => String(s.id) === String(AppState.selectedServer.id),
+        );
+        if (updatedServer) {
+          AppState.selectedServer = updatedServer;
+          // Faqat status va player count yangilash (to'liq UI rebuild qilmaslik)
+          if (elements.detailOnlineCount) {
+            elements.detailOnlineCount.textContent =
+              updatedServer.current_players || 0;
+          }
+          // Bottom bar status yangilash
+          document.querySelectorAll(".server-icon-item").forEach((item) => {
+            if (
+              item.getAttribute("data-server-id") ===
+              String(updatedServer.id)
+            ) {
+              item.classList.add("active");
+            } else {
+              item.classList.remove("active");
+            }
+          });
+        }
       }
+
+      // Periodik yangilashni boshlash (agar hali ishlamayotgan bo'lsa)
+      this.startServerPing();
     } catch (error) {
       console.error("loadServers error:", error);
+    }
+  },
+
+  // ========== SERVER PING (Periodik yangilash) ==========
+
+  startServerPing() {
+    // Agar allaqachon ishlayotgan bo'lsa, qayta ishga tushirmaslik
+    if (AppState.serverPingInterval) return;
+
+    AppState.serverPingInterval = setInterval(async () => {
+      if (!AppState.isAuthenticated) {
+        this.stopServerPing();
+        return;
+      }
+      try {
+        const response = await API.request("/launcher/servers/");
+        const servers = Array.isArray(response)
+          ? response
+          : response.servers || response.results || [];
+
+        AppState.servers = servers;
+
+        // Total online yangilash
+        const totalOnline = servers.reduce(
+          (acc, s) => acc + (s.current_players || 0),
+          0,
+        );
+        if (elements.totalOnlineCount) {
+          elements.totalOnlineCount.textContent = totalOnline;
+        }
+
+        // Tanlangan server ma'lumotlarini yangilash
+        if (AppState.selectedServer) {
+          const updated = servers.find(
+            (s) => String(s.id) === String(AppState.selectedServer.id),
+          );
+          if (updated) {
+            AppState.selectedServer = updated;
+            if (elements.detailOnlineCount) {
+              elements.detailOnlineCount.textContent =
+                updated.current_players || 0;
+            }
+          }
+        }
+
+        // Status indikatorlarini yangilash
+        document.querySelectorAll(".server-icon-item").forEach((item) => {
+          const serverId = item.getAttribute("data-server-id");
+          const srv = servers.find((s) => String(s.id) === serverId);
+          if (srv) {
+            const isOnline =
+              srv.status === "online" || srv.status === "running";
+            item.classList.toggle("online", isOnline);
+            item.classList.toggle("offline", !isOnline);
+          }
+        });
+      } catch (error) {
+        console.error("Server ping error:", error);
+        if (error.isAuthError) {
+          // Sessiya tugadi — pingni to'xtatib login sahifasiga qaytarish
+          this.stopServerPing();
+          UI.showLogin();
+        }
+      }
+    }, 30000); // 30 soniyada bir
+  },
+
+  stopServerPing() {
+    if (AppState.serverPingInterval) {
+      clearInterval(AppState.serverPingInterval);
+      AppState.serverPingInterval = null;
     }
   },
 

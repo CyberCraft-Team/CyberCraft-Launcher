@@ -603,6 +603,18 @@ ipcMain.handle("launch-game", async (event, options) => {
         `[CyberCraft] Using custom NeoForge launcher for ${loaderVersion}`,
       );
 
+      // NeoForge launcher uchun server address ni tayyorlash
+      const neoforgeServer = server
+        ? {
+            ...server,
+            address:
+              server.address ||
+              (server.ip_address
+                ? `${server.ip_address}:${server.port || 25565}`
+                : safeManifest.address),
+          }
+        : null;
+
       try {
         gameProcess = await launchNeoForgeCustom({
           versionJsonPath,
@@ -613,7 +625,7 @@ ipcMain.handle("launch-game", async (event, options) => {
           javaPath: finalJavaPath,
           gameDir: CONFIG.GAME_DIR,
           cybercraftArgs,
-          server,
+          server: neoforgeServer,
         });
 
         gameProcess.on("error", (err) => {
@@ -644,7 +656,19 @@ ipcMain.handle("launch-game", async (event, options) => {
       console.log(`[CyberCraft] Using Vanilla MC ${mcVersion}`);
     }
 
-    const serverAddress = server?.address || safeManifest.address;
+    // Server address ni aniqlash — barcha manbalardan tekshirish
+    let serverAddress = null;
+    if (server) {
+      if (server.address) {
+        serverAddress = server.address;
+      } else if (server.ip_address) {
+        serverAddress = `${server.ip_address}:${server.port || 25565}`;
+      }
+    }
+    if (!serverAddress && safeManifest.address) {
+      serverAddress = safeManifest.address;
+    }
+
     if (serverAddress) {
       const [host, port] = serverAddress.split(":");
       launchOptions.server = {
@@ -722,7 +746,7 @@ function createAuthSession(token) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Launcher ${token}`,
+        Authorization: `Token ${token}`,
         "Content-Length": Buffer.byteLength(postData),
       },
     };

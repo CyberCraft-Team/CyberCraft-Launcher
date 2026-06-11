@@ -26,26 +26,96 @@ const API = {
 
       // 401 Unauthorized — sessiya yaroqsiz
       if (response.status === 401) {
-        console.warn("401 Unauthorized — sessiya muddati tugagan");
         AppState.token = null;
         AppState.user = null;
         AppState.isAuthenticated = false;
         if (isElectron) {
           await window.electronAPI.clearToken();
         }
-        UI.showLogin();
-        throw new Error("Sessiya muddati tugadi. Iltimos, qayta kiring.");
+        
+        // Agar bu login so'rovi bo'lsa, xato xabarini backenddan olish
+        if (endpoint.includes("/auth/launcher/login/")) {
+          let errorMessage = "Foydalanuvchi nomi yoki parol noto'g'ri";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.detail || errorData.message || errorMessage;
+          } catch (e) {}
+          throw new Error(errorMessage);
+        }
+
+        const authErr = new Error("Sessiya muddati tugadi. Iltimos, qayta kiring.");
+        authErr.isAuthError = true;
+        throw authErr;
+      }
+
+      // 403 Forbidden — banned yoki ruxsat yo'q
+      if (response.status === 403) {
+        let errorMessage = "Ruxsat berilmadi";
+        try {
+          const errorData = await response.json();
+          if (errorData.code === "banned") {
+            errorMessage = errorData.error || "Akkauntingiz bloklangan";
+            // Banned foydalanuvchini login sahifasiga qaytarish
+            AppState.token = null;
+            AppState.user = null;
+            AppState.isAuthenticated = false;
+            if (isElectron) {
+              await window.electronAPI.clearToken();
+            }
+            UI.showLogin();
+          } else {
+            errorMessage = errorData.error || errorData.detail || errorMessage;
+          }
+        } catch (e) {
+          // JSON parse xatosi — text sifatida o'qish
+        }
+        throw new Error(errorMessage);
+      }
+
+      // 503 Service Unavailable — server o'chirilmoqda
+      if (response.status === 503) {
+        throw new Error(
+          "Server vaqtincha ishlamayapti. Iltimos, keyinroq qayta urinib ko'ring.",
+        );
+      }
+
+      // 500 Internal Server Error
+      if (response.status === 500) {
+        throw new Error(
+          "Serverda ichki xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
+        );
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API Error response:", errorText);
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
+        let errorMessage = `API Error: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage =
+            errorData.error ||
+            errorData.detail ||
+            errorData.message ||
+            errorMessage;
+        } catch (e) {
+          const errorText = await response.text();
+          if (errorText) errorMessage = errorText;
+        }
+        console.error("API Error response:", errorMessage);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
+      // Network error (serverga ulanib bo'lmadi)
+      if (
+        error.name === "TypeError" &&
+        error.message.includes("fetch")
+      ) {
+        console.error("Network error:", error);
+        throw new Error(
+          "Serverga ulanib bo'lmadi. Internet ulanishingizni tekshiring.",
+        );
+      }
       console.error("API Request failed:", error);
       throw error;
     }
@@ -187,18 +257,18 @@ const Auth = {
   },
 
   async logout() {
+    // Ping interval'ni tozalash
+    if (AppState.serverPingInterval) {
+      clearInterval(AppState.serverPingInterval);
+      AppState.serverPingInterval = null;
+    }
+
     try {
       if (AppState.token) {
         await API.request("/auth/launcher/logout/", { method: "POST" });
       }
     } catch (error) {
       console.error("Logout request error:", error);
-    }
-
-    // Ping interval'ni tozalash
-    if (AppState.serverPingInterval) {
-      clearInterval(AppState.serverPingInterval);
-      AppState.serverPingInterval = null;
     }
 
     AppState.token = null;
@@ -219,13 +289,11 @@ const Auth = {
   },
 
   async checkSession() {
-    let token, user;
+    let token;
     if (isElectron) {
       token = await window.electronAPI.getToken();
-      user = await window.electronAPI.getUser();
     } else {
       token = sessionStorage.getItem("launcher_token");
-      user = JSON.parse(sessionStorage.getItem("launcher_user") || "null");
     }
 
     if (token) {
@@ -244,9 +312,14 @@ const Auth = {
         }
         return true;
       } catch (error) {
-        console.error("Session check failed:", error);
-        // Token yaroqsiz — tozalash
+        if (error.isAuthError) {
+          // Disk dagi token yaroqsiz — bu normal holat (DB tozalangan, token expired)
+          console.warn("[Auth] Disk da saqlangan token yaroqsiz, login kerak.");
+        } else {
+          console.error("[Auth] Session tekshirishda xatolik:", error.message);
+        }
         AppState.token = null;
+        AppState.isAuthenticated = false;
         if (isElectron) await window.electronAPI.clearToken();
         return false;
       }
