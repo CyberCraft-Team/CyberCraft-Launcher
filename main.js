@@ -223,8 +223,14 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
       ...manifest.files.shaders.map(f => ({ ...f, type: 'shader', subDir: 'shaders' })),
     ]
     const downloaded = []
+    const session = loadSession()
+    const authHeaders = session?.token ? { Authorization: `Launcher ${session.token}` } : {}
     for (let i = 0; i < allFiles.length; i++) {
       const file = allFiles[i]
+      if (!file.url) {
+        console.warn(`Skipping ${file.name}: no download URL`)
+        continue
+      }
       const fileDir = path.join(baseDir, file.subDir)
       fs.mkdirSync(fileDir, { recursive: true })
       const filePath = path.join(fileDir, file.name)
@@ -235,7 +241,7 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
         state: 'downloading',
         percent: Math.round(((i) / allFiles.length) * 100),
       })
-      const response = await fetch(file.url)
+      const response = await fetch(file.url, { headers: authHeaders })
       if (!response.ok) throw new Error(`Failed to download ${file.name}: ${response.statusText}`)
       const buffer = Buffer.from(await response.arrayBuffer())
       if (file.hash) {
@@ -260,6 +266,7 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
     throw error
   }
 })
+
 
 ipcMain.handle('api:check-launcher-update', async () => {
   const platform = process.platform
