@@ -18,6 +18,7 @@ let localPort = 0
 let launcherSession = null
 let wsManager = null
 let activeGameProcess = null
+let quitWithoutKillingGame = false
 
 const totalMemGB = Math.floor(os.totalmem() / (1024 * 1024 * 1024))
 const defaultRam = Math.max(2, Math.min(4, Math.floor(totalMemGB / 3))) // Yana ham kamroq RAM beramiz
@@ -506,7 +507,20 @@ ipcMain.handle('launch-game', async (event, options) => {
       throw new Error('Minecraft failed to start. Check logs for details.')
     }
 
+    if (activeGameProcess.unref) {
+      activeGameProcess.unref()
+    }
+
     webContents.send('launch-status', { state: 'running', progress: 100, message: 'CyberCraft is now running!' })
+
+    quitWithoutKillingGame = true
+
+    // Close the launcher window after a brief delay
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.close()
+      }
+    }, 1500)
 
     activeGameProcess.on('exit', (code) => {
       activeGameProcess = null
@@ -669,7 +683,7 @@ async function createWindow() {
     mainWindow = null
     if (localServer) localServer.close()
     if (wsManager) wsManager.disconnect()
-    if (activeGameProcess) { activeGameProcess.kill(); activeGameProcess = null }
+    if (activeGameProcess && !quitWithoutKillingGame) { activeGameProcess.kill(); activeGameProcess = null }
   })
 }
 
@@ -685,7 +699,7 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   if (wsManager) wsManager.disconnect()
-  if (activeGameProcess) { activeGameProcess.kill(); activeGameProcess = null }
+  if (activeGameProcess && !quitWithoutKillingGame) { activeGameProcess.kill(); activeGameProcess = null }
   closeCache()
 })
 
