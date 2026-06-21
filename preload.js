@@ -1,74 +1,105 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld("electronAPI", {
-  minimize: () => ipcRenderer.send("minimize-window"),
-  maximize: () => ipcRenderer.send("maximize-window"),
-  close: () => ipcRenderer.send("close-window"),
+contextBridge.exposeInMainWorld('electronAPI', {
+  minimize: () => ipcRenderer.send('window-minimize'),
+  close: () => ipcRenderer.send('window-close'),
 
-  saveToken: (token) => ipcRenderer.invoke("save-token", token),
-  getToken: () => ipcRenderer.invoke("get-token"),
-  saveUser: (user) => ipcRenderer.invoke("save-user", user),
-  getUser: () => ipcRenderer.invoke("get-user"),
-  clearToken: () => ipcRenderer.invoke("clear-token"),
+  loadSettings: () => ipcRenderer.invoke('load-settings'),
+  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
 
-  getSettings: () => ipcRenderer.invoke("get-settings"),
-  saveSettings: (settings) => ipcRenderer.invoke("save-settings", settings),
-  getSystemRam: () => ipcRenderer.invoke("get-system-ram"),
+  getSession: () => ipcRenderer.invoke('api:get-session'),
+  login: (credentials) => ipcRenderer.invoke('api:login', credentials),
+  logout: () => ipcRenderer.invoke('api:logout'),
+  listServers: () => ipcRenderer.invoke('api:list-servers'),
+  getManifest: (serverId) => ipcRenderer.invoke('api:get-manifest', serverId),
+  createMinecraftSession: () => ipcRenderer.invoke('api:create-minecraft-session'),
+  checkLauncherUpdate: () => ipcRenderer.invoke('api:check-launcher-update'),
+  getWsToken: () => ipcRenderer.invoke('api:ws-token'),
 
-  scanGameFolder: () => ipcRenderer.invoke("scan-game-folder"),
-  deleteFile: (category, filename) =>
-    ipcRenderer.invoke("delete-file", category, filename),
-  downloadFile: (category, filename, url, expectedHash) =>
-    ipcRenderer.invoke("download-file", category, filename, url, expectedHash),
-  checkFileHash: (category, filename) =>
-    ipcRenderer.invoke("check-file-hash", category, filename),
+  downloadServerFiles: (serverId) => ipcRenderer.invoke('download-server-files', serverId),
+  launchGame: (server, modsDir) => ipcRenderer.invoke('launch-game', { server, modsDir }),
+  stopGame: () => ipcRenderer.invoke('stop-game'),
 
-  openFileDialog: () => ipcRenderer.invoke("open-file-dialog"),
-  openFolderDialog: () => ipcRenderer.invoke("open-folder-dialog"),
+  detectJava: () => ipcRenderer.invoke('api:detect-java'),
+  validateJava: (javaPath) => ipcRenderer.invoke('api:validate-java', javaPath),
+  getSystemMemory: () => ipcRenderer.invoke('api:get-system-memory'),
 
-  checkJavaVersion: (javaPath) =>
-    ipcRenderer.invoke("check-java-version", javaPath),
-  findJava21: () => ipcRenderer.invoke("find-java-21"),
+  checkUpdate: () => ipcRenderer.invoke('updater:check'),
+  downloadUpdate: () => ipcRenderer.invoke('updater:download'),
+  installUpdate: () => ipcRenderer.invoke('updater:install'),
 
-  launchGame: (options) => ipcRenderer.invoke("launch-game", options),
+  hasValidCache: () => ipcRenderer.invoke('cache:has-valid'),
+  getCachedServers: () => ipcRenderer.invoke('cache:get-servers'),
 
-  // Yo'q bo'lgan API'lar
-  openLogsFolder: () => ipcRenderer.invoke("open-logs-folder"),
-  openGameFolder: () => ipcRenderer.invoke("open-game-folder"),
-
-  // IPC listener'lar (cleanup bilan)
-  onLaunchProgress: (callback) => {
-    ipcRenderer.removeAllListeners("launch-progress");
-    ipcRenderer.on("launch-progress", (event, data) => callback(data));
+  onLaunchStatus: (callback) => {
+    const subscription = (event, status) => callback(status)
+    ipcRenderer.on('launch-status', subscription)
+    return () => ipcRenderer.removeListener('launch-status', subscription)
   },
-  onDownloadStatus: (callback) => {
-    ipcRenderer.removeAllListeners("download-status");
-    ipcRenderer.on("download-status", (event, data) => callback(data));
+
+  onGameLog: (callback) => {
+    const subscription = (event, line) => callback(line)
+    ipcRenderer.on('game-log', subscription)
+    return () => ipcRenderer.removeListener('game-log', subscription)
   },
+
+  onWsConnected: (callback) => {
+    const subscription = (event, data) => callback(data)
+    ipcRenderer.on('ws:connected', subscription)
+    return () => ipcRenderer.removeListener('ws:connected', subscription)
+  },
+
+  onWsDisconnected: (callback) => {
+    const subscription = (event, data) => callback(data)
+    ipcRenderer.on('ws:disconnected', subscription)
+    return () => ipcRenderer.removeListener('ws:disconnected', subscription)
+  },
+
+  onWsStatus: (callback) => {
+    const subscription = (event, data) => callback(data)
+    ipcRenderer.on('ws:status', subscription)
+    return () => ipcRenderer.removeListener('ws:status', subscription)
+  },
+
+  onWsConsole: (callback) => {
+    const subscription = (event, data) => callback(data)
+    ipcRenderer.on('ws:console', subscription)
+    return () => ipcRenderer.removeListener('ws:console', subscription)
+  },
+
+  onWsLaunchProgress: (callback) => {
+    const subscription = (event, data) => callback(data)
+    ipcRenderer.on('ws:launch-progress', subscription)
+    return () => ipcRenderer.removeListener('ws:launch-progress', subscription)
+  },
+
+  onWsUpdate: (callback) => {
+    const subscription = (event, data) => callback(data)
+    ipcRenderer.on('ws:update', subscription)
+    return () => ipcRenderer.removeListener('ws:update', subscription)
+  },
+
   onDownloadProgress: (callback) => {
-    ipcRenderer.removeAllListeners("download-progress");
-    ipcRenderer.on("download-progress", (event, data) => callback(data));
-  },
-  onGameClose: (callback) => {
-    ipcRenderer.removeAllListeners("game-closed");
-    ipcRenderer.on("game-closed", (event, code) => callback(code));
-  },
-  onGameError: (callback) => {
-    ipcRenderer.removeAllListeners("game-error");
-    ipcRenderer.on("game-error", (event, error) => callback(error));
+    const subscription = (event, progress) => callback(progress)
+    ipcRenderer.on('download-progress', subscription)
+    return () => ipcRenderer.removeListener('download-progress', subscription)
   },
 
-  // Crash log
-  readCrashLog: () => ipcRenderer.invoke("read-crash-log"),
+  onUpdateAvailable: (callback) => {
+    const subscription = (event, info) => callback(info)
+    ipcRenderer.on('updater:update-available', subscription)
+    return () => ipcRenderer.removeListener('updater:update-available', subscription)
+  },
 
-  // Auto-Update
-  checkForUpdate: () => ipcRenderer.invoke("check-for-update"),
-  downloadUpdate: (downloadUrl) =>
-    ipcRenderer.invoke("download-update", downloadUrl),
-  installUpdate: (filePath) => ipcRenderer.invoke("install-update", filePath),
-  getLauncherVersion: () => ipcRenderer.invoke("get-launcher-version"),
   onUpdateProgress: (callback) => {
-    ipcRenderer.removeAllListeners("update-progress");
-    ipcRenderer.on("update-progress", (event, data) => callback(data));
+    const subscription = (event, progress) => callback(progress)
+    ipcRenderer.on('updater:download-progress', subscription)
+    return () => ipcRenderer.removeListener('updater:download-progress', subscription)
   },
-});
+
+  onUpdateDownloaded: (callback) => {
+    const subscription = (event, info) => callback(info)
+    ipcRenderer.on('updater:update-downloaded', subscription)
+    return () => ipcRenderer.removeListener('updater:update-downloaded', subscription)
+  },
+})
