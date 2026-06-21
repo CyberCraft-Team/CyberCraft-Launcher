@@ -356,6 +356,21 @@ async function downloadAuthlibInjector(destPath) {
   })
 }
 
+async function downloadFile(url, destPath) {
+  if (fs.existsSync(destPath)) {
+    return destPath
+  }
+  fs.mkdirSync(path.dirname(destPath), { recursive: true })
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to download: ${response.statusText} (${response.status})`)
+  }
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+  fs.writeFileSync(destPath, buffer)
+  return destPath
+}
+
 ipcMain.handle('launch-game', async (event, options) => {
   const webContents = event.sender
   const { server, modsDir } = options
@@ -477,21 +492,50 @@ ipcMain.handle('launch-game', async (event, options) => {
       }
     }
 
-    // Handle Forge/Fabric if specified in manifest
-    if (manifest?.loader === 'forge') {
-      const customName = `forge-${versionNum}`
-      if (fs.existsSync(path.join(gameDir, 'versions', customName, `${customName}.json`))) {
-        opts.version.custom = customName
-      } else {
-        console.log(`[LAUNCHER] Custom version ${customName} not found, falling back to vanilla ${versionNum}.`)
+    // Handle Forge/Fabric/NeoForge if specified in manifest
+    if (manifest?.loader === 'forge' && manifest?.loaderVersion) {
+      const forgeFilename = `forge-${manifest.minecraft}-${manifest.loaderVersion}-installer.jar`
+      const forgeInstallerPath = path.join(app.getPath('userData'), 'CyberCraft', 'installers', forgeFilename)
+      const forgeUrl = `https://maven.minecraftforge.net/net/minecraftforge/forge/${manifest.minecraft}-${manifest.loaderVersion}/${forgeFilename}`
+      
+      webContents.send('launch-status', { 
+        state: 'syncing', 
+        progress: 45, 
+        message: `Downloading Forge ${manifest.loaderVersion} installer...` 
+      })
+      
+      try {
+        await downloadFile(forgeUrl, forgeInstallerPath)
+        opts.forge = forgeInstallerPath
+        console.log(`[LAUNCHER] Using Forge installer: ${forgeInstallerPath}`)
+      } catch (err) {
+        console.error('Failed to download/install Forge:', err)
+        throw new Error(`Failed to download Forge loader: ${err.message}`)
       }
-    } else if (manifest?.loader === 'fabric') {
-      const customName = `fabric-${versionNum}`
-      if (fs.existsSync(path.join(gameDir, 'versions', customName, `${customName}.json`))) {
-        opts.version.custom = customName
-      } else {
-        console.log(`[LAUNCHER] Custom version ${customName} not found, falling back to vanilla ${versionNum}.`)
+    } else if (manifest?.loader === 'fabric' && manifest?.loaderVersion) {
+      const customName = `fabric-${manifest.minecraft}-${manifest.loaderVersion}`
+      const fabricJsonDir = path.join(gameDir, 'versions', customName)
+      const fabricJsonPath = path.join(fabricJsonDir, `${customName}.json`)
+      const fabricMetaUrl = `https://meta.fabricmc.net/v2/versions/loader/${manifest.minecraft}/${manifest.loaderVersion}/profile/json`
+      
+      if (!fs.existsSync(fabricJsonPath)) {
+        webContents.send('launch-status', { 
+          state: 'syncing', 
+          progress: 45, 
+          message: `Downloading Fabric ${manifest.loaderVersion} profile...` 
+        })
+        
+        try {
+          await downloadFile(fabricMetaUrl, fabricJsonPath)
+          console.log(`[LAUNCHER] Downloaded Fabric profile to ${fabricJsonPath}`)
+        } catch (err) {
+          console.error('Failed to download Fabric metadata:', err)
+          throw new Error(`Failed to download Fabric profile: ${err.message}`)
+        }
       }
+      
+      opts.version.custom = customName
+      console.log(`[LAUNCHER] Launching Fabric version: ${customName}`)
     }
 
     if (server?.ip_address) {
