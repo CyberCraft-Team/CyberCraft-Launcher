@@ -39,10 +39,22 @@ for (const file of requiredFiles) {
 }
 
 console.log('Installing production dependencies...');
-execSync('npm install --production --ignore-scripts', {
+const tempNpmrc = path.join(STAGING, '.temp-npmrc');
+fs.writeFileSync(tempNpmrc, '');
+
+const cleanEnv = { ...process.env };
+for (const key of Object.keys(cleanEnv)) {
+  if (key.startsWith('npm_config_')) {
+    delete cleanEnv[key];
+  }
+}
+
+execSync(`npm install --omit=dev --ignore-scripts --userconfig=${tempNpmrc}`, {
   cwd: STAGING,
   stdio: 'inherit',
+  env: cleanEnv,
 });
+fs.rmSync(tempNpmrc, { force: true });
 
 console.log('Removing unnecessary files from node_modules...');
 function removeUnnecessary(dir) {

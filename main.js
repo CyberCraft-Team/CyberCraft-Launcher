@@ -297,11 +297,11 @@ async function copyModsAndResources(modsDir, gameDir) {
   const fs = require('fs')
   const path = require('path')
   const subDirs = ['mods', 'resourcepacks', 'shaders']
-  
+
   for (const subDir of subDirs) {
     const srcDir = path.join(modsDir, subDir)
     const destDir = path.join(gameDir, subDir)
-    
+
     if (fs.existsSync(srcDir)) {
       fs.mkdirSync(destDir, { recursive: true })
       const files = fs.readdirSync(srcDir)
@@ -320,38 +320,38 @@ async function downloadAuthlibInjector(destPath) {
   if (fs.existsSync(destPath)) {
     return destPath
   }
-  
+
   fs.mkdirSync(path.dirname(destPath), { recursive: true })
-  
+
   const url = 'https://github.com/yushijinhun/authlib-injector/releases/download/v1.2.7/authlib-injector-1.2.7.jar'
-  
+
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(destPath)
-    
+
     const request = (downloadUrl) => {
       https.get(downloadUrl, (response) => {
         if (response.statusCode === 302 || response.statusCode === 301) {
           request(response.headers.location)
           return
         }
-        
+
         if (response.statusCode !== 200) {
           reject(new Error(`Failed to download authlib-injector: HTTP ${response.statusCode}`))
           return
         }
-        
+
         response.pipe(file)
-        
+
         file.on('finish', () => {
           file.close()
           resolve(destPath)
         })
       }).on('error', (err) => {
-        fs.unlink(destPath, () => {})
+        fs.unlink(destPath, () => { })
         reject(err)
       })
     }
-    
+
     request(url)
   })
 }
@@ -411,9 +411,9 @@ ipcMain.handle('launch-game', async (event, options) => {
     webContents.send('launch-status', { state: 'syncing', progress: 40, message: `Preparing Minecraft ${manifest?.minecraft || 'latest'} profile...` })
 
     const { createGameDirectory } = require('./utils/game-launcher')
-    
+
     const gameDir = await createGameDirectory(manifest || { minecraft: 'latest', id: server?.id || 'default' })
-    
+
     if (modsDir) {
       webContents.send('launch-status', { state: 'syncing', progress: 50, message: 'Installing mods and resources...' })
       await copyModsAndResources(modsDir, gameDir)
@@ -446,7 +446,7 @@ ipcMain.handle('launch-game', async (event, options) => {
     })
 
     const versionNum = manifest?.minecraft || '1.21.4'
-    
+
     const yggdrasilUrl = `${await getApiBaseUrl()}/yggdrasil`
     const jvmArgsArray = jvmArgs.split(' ').filter(a => a.trim() && a !== '-XX:+ZGenerational')
     jvmArgsArray.push(`-javaagent:${authlibPath}=${yggdrasilUrl}`)
@@ -469,7 +469,7 @@ ipcMain.handle('launch-game', async (event, options) => {
         max: `${ram}G`,
         min: `${ram}G`
       },
-      javaPath: (function() {
+      javaPath: (function () {
         let p = javaInfo.path;
         if (process.platform === 'win32') {
           if (p === 'java') {
@@ -497,13 +497,13 @@ ipcMain.handle('launch-game', async (event, options) => {
       const forgeFilename = `forge-${manifest.minecraft}-${manifest.loaderVersion}-installer.jar`
       const forgeInstallerPath = path.join(app.getPath('userData'), 'CyberCraft', 'installers', forgeFilename)
       const forgeUrl = `https://maven.minecraftforge.net/net/minecraftforge/forge/${manifest.minecraft}-${manifest.loaderVersion}/${forgeFilename}`
-      
-      webContents.send('launch-status', { 
-        state: 'syncing', 
-        progress: 45, 
-        message: `Downloading Forge ${manifest.loaderVersion} installer...` 
+
+      webContents.send('launch-status', {
+        state: 'syncing',
+        progress: 45,
+        message: `Downloading Forge ${manifest.loaderVersion} installer...`
       })
-      
+
       try {
         await downloadFile(forgeUrl, forgeInstallerPath)
         opts.forge = forgeInstallerPath
@@ -517,14 +517,14 @@ ipcMain.handle('launch-game', async (event, options) => {
       const fabricJsonDir = path.join(gameDir, 'versions', customName)
       const fabricJsonPath = path.join(fabricJsonDir, `${customName}.json`)
       const fabricMetaUrl = `https://meta.fabricmc.net/v2/versions/loader/${manifest.minecraft}/${manifest.loaderVersion}/profile/json`
-      
+
       if (!fs.existsSync(fabricJsonPath)) {
-        webContents.send('launch-status', { 
-          state: 'syncing', 
-          progress: 45, 
-          message: `Downloading Fabric ${manifest.loaderVersion} profile...` 
+        webContents.send('launch-status', {
+          state: 'syncing',
+          progress: 45,
+          message: `Downloading Fabric ${manifest.loaderVersion} profile...`
         })
-        
+
         try {
           await downloadFile(fabricMetaUrl, fabricJsonPath)
           console.log(`[LAUNCHER] Downloaded Fabric profile to ${fabricJsonPath}`)
@@ -533,7 +533,7 @@ ipcMain.handle('launch-game', async (event, options) => {
           throw new Error(`Failed to download Fabric profile: ${err.message}`)
         }
       }
-      
+
       opts.version.custom = customName
       console.log(`[LAUNCHER] Launching Fabric version: ${customName}`)
     }
