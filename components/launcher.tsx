@@ -146,14 +146,15 @@ export function Launcher() {
                 const profileUrl = `${domain}/cabinet/profile`
                 window.electronAPI.openExternal(profileUrl)
               }}
-              className="mr-2 flex items-center gap-2.5 rounded-full border border-cyan-300/25 bg-[#0e141f]/95 p-0.5 pr-3.5 text-sm font-bold text-white transition hover:border-cyan-300/60 hover:shadow-[0_0_12px_rgba(0,240,255,0.18)]"
+              className="mr-2 flex items-center gap-2.5 rounded border border-cyan-300/25 bg-[#0e141f]/95 p-0.5 pr-3.5 text-sm font-bold text-white transition hover:border-cyan-300/60 hover:shadow-[0_0_12px_rgba(0,240,255,0.18)]"
               aria-label="Profilni ochish"
+              style={{ borderRadius: '10px' } as React.CSSProperties}
             >
               {user.skin_face_url ? (
                 <img
                   src={user.skin_face_url}
                   alt={user.username}
-                  className="size-9 rounded-full border border-cyan-300/20 object-cover"
+                  className="size-9 rounded border border-cyan-300/20 object-cover"
                   style={{ imageRendering: 'pixelated' }}
                 />
               ) : (

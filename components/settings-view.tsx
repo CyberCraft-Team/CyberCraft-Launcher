@@ -5,7 +5,6 @@ import type { ReactNode } from 'react'
 import {
   CheckCircle2,
   Cpu,
-  Database,
   FolderOpen,
   HardDrive,
   Loader2,
@@ -296,18 +295,7 @@ export function SettingsView() {
               </div>
             </SettingsCard>
 
-            <SettingsCard icon={Database} title="Cache va backend" description="Mod cache va API endpoint.">
-              <input
-                value={apiBaseUrl}
-                onChange={(event) => setApiBaseUrl(event.target.value)}
-                spellCheck={false}
-                className="h-11 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-3 font-mono text-xs text-cyan-200 outline-none transition focus:border-cyan-300"
-              />
-              <button className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-300/25 bg-red-400/10 text-xs font-black text-red-200 transition hover:border-red-300/45">
-                <Database className="size-4" />
-                Cache tozalash
-              </button>
-            </SettingsCard>
+
           </div>
         </aside>
       </div>
