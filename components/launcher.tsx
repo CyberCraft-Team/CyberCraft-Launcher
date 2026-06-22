@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Home, Settings, Minus, X, Gamepad2, LogOut, RefreshCw } from 'lucide-react'
+import { Home, Settings, Minus, X, Gamepad2, LogOut, RefreshCw, Cuboid, User, Search, Server } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { HomeView } from './home-view'
 import { SettingsView } from './settings-view'
@@ -17,6 +17,7 @@ export function Launcher() {
   const [tab, setTab] = useState<Tab>('home')
   const [user, setUser] = useState<LauncherUser | null>(null)
   const [servers, setServers] = useState<LauncherServer[]>([])
+  const [selectedServerId, setSelectedServerId] = useState('')
   const [loadingSession, setLoadingSession] = useState(true)
   const [loadingServers, setLoadingServers] = useState(false)
   const [connectionError, setConnectionError] = useState('')
@@ -60,8 +61,15 @@ export function Launcher() {
       refreshServers()
     } else {
       setServers([])
+      setSelectedServerId('')
     }
   }, [user])
+
+  useEffect(() => {
+    if (servers.length > 0 && !selectedServerId) {
+      setSelectedServerId(servers[0].id)
+    }
+  }, [servers, selectedServerId])
 
   async function handleLogin(username: string, password: string) {
     if (!window.electronAPI) return
@@ -85,246 +93,185 @@ export function Launcher() {
   const onlinePlayers = servers.reduce((sum, server) => sum + (server.current_players || 0), 0)
 
   return (
-    <main className="relative flex h-dvh w-full flex-col overflow-hidden" style={{ background: '#0a0a0f' }}>
-      {/* Deep dark background */}
-      <div className="pointer-events-none absolute inset-0" style={{ background: '#0a0a0f' }} />
-
-      {/* Launcher BG image */}
+    <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#070b10]">
+      <div className="pointer-events-none absolute inset-0 bg-[#070b10]" />
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-10"
         style={{ backgroundImage: 'url(/launcher-bg.png)' }}
       />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
+      <div className="pointer-events-none absolute -left-32 -top-32 size-[420px] rounded-full bg-cyan-300/12 blur-[140px]" />
+      <div className="pointer-events-none absolute -bottom-36 right-0 size-[420px] rounded-full bg-emerald-300/10 blur-[150px]" />
 
-      {/* Grid pattern */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-15"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none' stroke='%231a1a2e' stroke-width='1'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Ambient glow blobs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-40 -left-40 w-96 h-96 rounded-full blur-[160px] opacity-20"
-          style={{ background: '#00f0ff' }}
-        />
-        <div
-          className="absolute bottom-0 right-0 w-80 h-80 rounded-full blur-[160px] opacity-15"
-          style={{ background: '#ff0060' }}
-        />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[120px] opacity-10"
-          style={{ background: '#00ff88' }}
-        />
-      </div>
-
-      {/* ── Title bar ── */}
       <header
-        className="relative z-10 flex items-center justify-between border-b px-4 py-2.5 select-none"
+        className="relative z-10 flex h-16 select-none items-center justify-between border-b border-[#1f2a3d] bg-[#080d13]/95 px-4"
         style={{
-          borderColor: '#1a1a2e',
-          background: 'rgba(13, 13, 20, 0.95)',
           WebkitAppRegion: 'drag',
         } as React.CSSProperties}
       >
         <div className="flex items-center gap-2.5">
-          {/* Logo */}
-          <div
-            className="flex size-8 items-center justify-center rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, #00f0ff, #00a8b3)',
-              boxShadow: '0 0 16px rgba(0,240,255,0.4)',
-            }}
-          >
-            <Gamepad2 className="size-4.5" style={{ color: '#0a0a0f' }} />
+          <div className="relative flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-300 to-emerald-300 shadow-[0_0_18px_rgba(0,240,255,0.38)]">
+            <Cuboid className="size-6 text-[#071017]" />
+            <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-yellow-300 shadow-[0_0_8px_rgba(255,222,89,0.8)]" />
           </div>
 
-          <span className="font-display text-sm tracking-[0.2em]">
-            <span style={{ color: '#00f0ff', textShadow: '0 0 12px rgba(0,240,255,0.7)' }}>CYBER</span>
-            <span style={{ color: '#ffffff' }}>CRAFT</span>
+          <span className="font-display text-base tracking-[0.18em]">
+            <span className="text-cyan-300 text-glow">CYBER</span>
+            <span className="text-white">CRAFT</span>
           </span>
 
-          <span className="ml-2 hidden items-center gap-1.5 text-xs sm:flex" style={{ color: '#8888aa' }}>
-            <span
-              className="size-1.5 rounded-full"
-              style={{ background: '#00ff88', boxShadow: '0 0 6px #00ff88' }}
-            />
+          <span className="ml-2.5 hidden items-center gap-1.5 text-xs text-[#8ba0b8] sm:flex">
+            <span className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(34,255,145,0.9)]" />
             {onlinePlayers.toLocaleString()} o'yinchi onlayn
           </span>
         </div>
 
-        {/* Window controls */}
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1.5"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
+          {/* User Profile Button */}
+          {user && (
+            <button
+              onClick={async () => {
+                if (!window.electronAPI) return
+                const settings = await window.electronAPI.loadSettings()
+                const apiBaseUrl = settings.apiBaseUrl || 'http://127.0.0.1:8000/api/v1'
+                let domain = apiBaseUrl.replace(/\/api\/v1\/?$/, '')
+                if (domain.includes('127.0.0.1:8000') || domain.includes('localhost:8000')) {
+                  domain = 'http://127.0.0.1:3000'
+                } else {
+                  domain = domain.replace(/^https?:\/\/api\./, 'https://')
+                }
+                const profileUrl = `${domain}/cabinet/profile`
+                window.electronAPI.openExternal(profileUrl)
+              }}
+              className="mr-2 flex items-center gap-2.5 rounded-full border border-cyan-300/25 bg-[#0e141f]/95 p-0.5 pr-3.5 text-sm font-bold text-white transition hover:border-cyan-300/60 hover:shadow-[0_0_12px_rgba(0,240,255,0.18)]"
+              aria-label="Profilni ochish"
+            >
+              {user.skin_face_url ? (
+                <img
+                  src={user.skin_face_url}
+                  alt={user.username}
+                  className="size-9 rounded-full border border-cyan-300/20 object-cover"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-emerald-300 font-display text-xs font-black text-[#071017]">
+                  {(user?.username || 'P').slice(0, 1).toUpperCase()}
+                </span>
+              )}
+              <span className="max-w-[120px] truncate">{user.username}</span>
+            </button>
+          )}
+
           <button
             onClick={() => window.electronAPI?.minimize()}
             aria-label="Kichraytirish"
-            className="rounded-md p-1.5 transition-all"
-            style={{ color: '#8888aa' }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(0,240,255,0.1)'
-              e.currentTarget.style.color = '#00f0ff'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.color = '#8888aa'
-            }}
+            className="rounded-lg p-2 text-[#8ba0b8] transition hover:bg-cyan-300/10 hover:text-cyan-300"
           >
-            <Minus className="size-4" />
+            <Minus className="size-4.5" />
           </button>
           <button
             onClick={() => window.electronAPI?.close()}
             aria-label="Yopish"
-            className="rounded-md p-1.5 transition-all"
-            style={{ color: '#8888aa' }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(255,68,68,0.15)'
-              e.currentTarget.style.color = '#ff4444'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.color = '#8888aa'
-            }}
+            className="rounded-lg p-2 text-[#8ba0b8] transition hover:bg-red-400/15 hover:text-red-300"
           >
-            <X className="size-4" />
+            <X className="size-4.5" />
           </button>
         </div>
       </header>
 
       <div className="relative z-10 flex min-h-0 flex-1">
-        {/* ── Sidebar ── */}
         <nav
-          className="flex w-16 flex-col items-center gap-2 border-r py-5 md:w-52 md:items-stretch md:px-3"
-          style={{ borderColor: '#1a1a2e', background: 'rgba(13, 13, 20, 0.8)' }}
+          className="flex w-14 shrink-0 flex-col items-center rounded-3xl border border-white/8 bg-[#080d14]/95 py-3.5 px-1.5 h-fit max-h-[calc(100vh-80px)] my-auto ml-4 shadow-[0_16px_48px_rgba(0,0,0,0.4)] animate-fade-in"
         >
-          {NAV.map((item) => {
-            const active = tab === item.id
-            const Icon = item.icon
-            return (
-              <button
-                key={item.id}
-                onClick={() => setTab(item.id)}
-                className="relative flex items-center justify-center gap-3 rounded-xl px-0 py-3 transition-all md:justify-start md:px-3"
-                style={{
-                  color: active ? '#00f0ff' : '#8888aa',
-                  background: active ? 'rgba(0,240,255,0.08)' : 'transparent',
-                  border: active ? '1px solid rgba(0,240,255,0.25)' : '1px solid transparent',
-                  boxShadow: active ? '0 0 12px rgba(0,240,255,0.1), inset 0 0 8px rgba(0,240,255,0.05)' : 'none',
-                }}
-                onMouseEnter={e => {
-                  if (!active) {
-                    e.currentTarget.style.color = '#ffffff'
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!active) {
-                    e.currentTarget.style.color = '#8888aa'
-                    e.currentTarget.style.background = 'transparent'
-                  }
-                }}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="nav-active"
-                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                    className="absolute inset-0 rounded-xl"
-                    style={{ background: 'rgba(0,240,255,0.06)' }}
-                  />
-                )}
-                <Icon className="relative size-5 shrink-0" />
-                <span className="relative hidden text-sm font-medium md:inline">{item.label}</span>
-              </button>
-            )
-          })}
-
-          {/* User card */}
-          <div className="mt-auto hidden flex-col gap-2 md:flex">
-            <div
-              className="flex items-center gap-2.5 rounded-xl p-2.5"
-              style={{
-                background: 'rgba(18,18,26,0.9)',
-                border: '1px solid #1a1a2e',
-              }}
-            >
-              {user?.skin_face_url ? (
-                <img
-                  src={user.skin_face_url}
-                  alt={user.username}
-                  className="size-8 rounded-lg object-cover"
-                  style={{ imageRendering: 'pixelated', border: '1px solid rgba(0,240,255,0.3)' }}
-                />
-              ) : (
-                <span
-                  className="flex size-8 items-center justify-center rounded-lg font-display text-sm"
-                  style={{
-                    background: 'linear-gradient(135deg, #00f0ff, #00a8b3)',
-                    color: '#0a0a0f',
-                    fontWeight: 700,
-                  }}
-                >
-                  {(user?.username || 'P').slice(0, 1).toUpperCase()}
-                </span>
-              )}
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-medium" style={{ color: '#ffffff' }}>
-                  {user?.username || 'Mehmon'}
-                </span>
-                <span className="text-[11px]" style={{ color: '#00f0ff' }}>
-                  {user?.rank || 'Launcher'}
-                </span>
-              </div>
-              {user && (
-                <button
-                  onClick={handleLogout}
-                  aria-label="Chiqish"
-                  className="ml-auto rounded-md p-1.5 transition-all"
-                  style={{ color: '#8888aa' }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255,68,68,0.1)'
-                    e.currentTarget.style.color = '#ff4444'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.color = '#8888aa'
-                  }}
-                >
-                  <LogOut className="size-4" />
-                </button>
-              )}
+          {/* Server List - height adapts to number of servers dynamically */}
+          {user && (
+            <div className="flex w-full flex-col items-center gap-2.5 shrink-0 my-1">
+              {servers.map((server) => {
+                const active = selectedServerId === server.id && tab === 'home'
+                const online = ['online', 'running', 'starting'].includes(server.status)
+                
+                return (
+                  <button
+                    key={server.id}
+                    onClick={() => {
+                      setSelectedServerId(server.id)
+                      setTab('home')
+                    }}
+                    className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition ${
+                      active
+                        ? 'border-cyan-300 bg-cyan-300/[0.08] text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                        : 'border-[#263246] bg-[#0d1219]/90 text-[#8ba0b8] hover:border-cyan-300/40 hover:text-white'
+                    }`}
+                  >
+                    {active && (
+                      <span className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-1 h-6 rounded-r bg-cyan-300 shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
+                    )}
+                    
+                    {server.icon_url ? (
+                      <img
+                        src={server.icon_url}
+                        alt={server.name}
+                        className="size-full rounded-xl object-cover"
+                      />
+                    ) : (
+                      <Server className="size-5" />
+                    )}
+                    
+                    <span className={`absolute bottom-[-1px] right-[-1px] size-2.5 rounded-full border border-[#080d14] ${
+                      online ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-red-400'
+                    }`} />
+                    
+                    <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                      {server.name} ({online ? `${server.current_players}/${server.max_players}` : 'Oflayn'})
+                    </div>
+                  </button>
+                )
+              })}
             </div>
+          )}
 
-            {user && (
-              <button
-                onClick={refreshServers}
-                disabled={loadingServers}
-                className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs transition-all disabled:opacity-60"
-                style={{
-                  border: '1px solid #1a1a2e',
-                  background: 'rgba(0,240,255,0.05)',
-                  color: '#8888aa',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.color = '#00f0ff'
-                  e.currentTarget.style.borderColor = 'rgba(0,240,255,0.3)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.color = '#8888aa'
-                  e.currentTarget.style.borderColor = '#1a1a2e'
-                }}
-              >
-                <RefreshCw className={`size-3.5 ${loadingServers ? 'animate-spin' : ''}`} />
-                Yangilash
-              </button>
+          <span className="w-8 h-px bg-[#1f2a3d] my-1 shrink-0" />
+
+          {/* Settings tab button */}
+          <button
+            onClick={() => setTab('settings')}
+            className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition ${
+              tab === 'settings'
+                ? 'border-cyan-300 bg-cyan-300/[0.08] text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                : 'border-[#263246] bg-[#0d1219]/90 text-[#8ba0b8] hover:border-cyan-300/40 hover:text-white'
+            }`}
+          >
+            {tab === 'settings' && (
+              <motion.span
+                layoutId="nav-active"
+                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                className="absolute inset-0 rounded-xl bg-cyan-300/[0.06]"
+              />
             )}
-          </div>
+            <Settings className="relative size-5 shrink-0" />
+            <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
+              Sozlamalar
+            </div>
+          </button>
+
+          {/* Logout button (avatar completely removed) */}
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="group relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-[#263246] bg-red-500/5 text-[#8ba0b8] transition hover:border-red-400/30 hover:text-red-400 mt-2"
+            >
+              <LogOut className="size-5" />
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
+                Chiqish
+              </div>
+            </button>
+          )}
         </nav>
 
-        {/* ── Content ── */}
-        <section className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-6 md:p-8">
+        <section className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
           <AnimatePresence mode="wait">
             <motion.div
               key={tab}
@@ -338,6 +285,8 @@ export function Launcher() {
                 <HomeView
                   user={user}
                   servers={servers}
+                  selectedServerId={selectedServerId}
+                  setSelectedServerId={setSelectedServerId}
                   loadingSession={loadingSession}
                   loadingServers={loadingServers}
                   connectionError={connectionError}

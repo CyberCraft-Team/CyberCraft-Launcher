@@ -1,13 +1,55 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Cpu, MemoryStick, Save, Terminal, RotateCcw, RadioTower } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import {
+  CheckCircle2,
+  Cpu,
+  Database,
+  FolderOpen,
+  HardDrive,
+  Loader2,
+  MemoryStick,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  Terminal,
+  ToggleRight,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 const MIN_RAM = 2
 const MAX_RAM = 16
+const DEFAULT_ARGS = '-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200'
 
-function CyberToggle({
+function SettingsCard({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon: typeof MemoryStick
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <section className="rounded-3xl border border-[#263246] bg-[#101822]/92 p-5 shadow-[0_16px_48px_rgba(0,0,0,0.16)]">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/25 bg-cyan-300/10">
+          <Icon className="size-5 text-cyan-300" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-black text-white">{title}</h2>
+          <p className="mt-1 text-xs leading-5 text-[#8ba0b8]">{description}</p>
+        </div>
+      </div>
+      <div className="mt-5">{children}</div>
+    </section>
+  )
+}
+
+function ToggleRow({
   checked,
   onChange,
   label,
@@ -21,312 +63,258 @@ function CyberToggle({
   return (
     <button
       onClick={() => onChange(!checked)}
-      className="flex items-center justify-between gap-4 rounded-xl px-4 py-3 text-left transition-all"
-      style={{
-        background: '#12121a',
-        border: `1px solid ${checked ? 'rgba(0,240,255,0.3)' : '#1a1a2e'}`,
-        boxShadow: checked ? '0 0 16px rgba(0,240,255,0.08)' : 'none',
-      }}
+      className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4 text-left transition hover:border-cyan-300/35"
     >
-      <span className="flex flex-col">
-        <span className="text-sm font-medium" style={{ color: '#ffffff' }}>{label}</span>
-        <span className="text-xs" style={{ color: '#8888aa' }}>{desc}</span>
+      <span>
+        <span className="block text-sm font-bold text-white">{label}</span>
+        <span className="mt-1 block text-xs text-[#8ba0b8]">{desc}</span>
       </span>
-      {/* Toggle track */}
-      <span
-        className="relative h-6 w-11 shrink-0 rounded-full transition-all duration-300"
-        style={{
-          background: checked
-            ? 'linear-gradient(135deg, #00f0ff, #00a8b3)'
-            : '#1a1a2e',
-          boxShadow: checked ? '0 0 10px rgba(0,240,255,0.4)' : 'none',
-        }}
-      >
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-cyan-300/25' : 'bg-[#263246]'}`}>
         <motion.span
-          layout
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          className="absolute top-0.5 size-5 rounded-full"
-          style={{
-            left: checked ? 22 : 2,
-            background: checked ? '#0a0a0f' : '#8888aa',
-          }}
+          animate={{ x: checked ? 22 : 3 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+          className={`absolute top-1 size-5 rounded-full ${checked ? 'bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.65)]' : 'bg-[#8ba0b8]'}`}
         />
       </span>
     </button>
   )
 }
 
+function PathRow({
+  label,
+  value,
+  action = 'Tanlash',
+}: {
+  label: string
+  value: string
+  action?: string
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
+      <FolderOpen className="size-5 shrink-0 text-cyan-300" />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-bold text-white">{label}</div>
+        <div className="mt-1 truncate font-mono text-xs text-[#8ba0b8]">{value}</div>
+      </div>
+      <button className="rounded-xl border border-[#2b3950] px-3 py-2 text-xs font-bold text-[#dfeaff] transition hover:border-cyan-300/40">
+        {action}
+      </button>
+    </div>
+  )
+}
+
 export function SettingsView() {
   const [ram, setRam] = useState(6)
-  const [args, setArgs] = useState('-XX:+UseZGC -XX:+ZGenerational -XX:MaxGCPauseMillis=10 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch')
+  const [args, setArgs] = useState(DEFAULT_ARGS)
   const [optimize, setOptimize] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
+  const [autoClose, setAutoClose] = useState(true)
   const [apiBaseUrl, setApiBaseUrl] = useState('http://127.0.0.1:8000/api/v1')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [maxRam, setMaxRam] = useState(MAX_RAM)
+  const [javaInfo, setJavaInfo] = useState<JavaInfo | null>(null)
+  const [detectingJava, setDetectingJava] = useState(false)
 
   useEffect(() => {
-    if (window.electronAPI) {
-      Promise.all([
-        window.electronAPI.loadSettings(),
-        window.electronAPI.getSystemMemory ? window.electronAPI.getSystemMemory() : Promise.resolve(MAX_RAM)
-      ]).then(([settings, mem]) => {
-        const dynamicMax = mem > MIN_RAM ? mem : MAX_RAM
-        setMaxRam(dynamicMax)
-        
-        if (settings) {
-          setRam(Math.min(settings.ram, dynamicMax))
-          setArgs(settings.args || '')
-          setOptimize(settings.optimize)
-          setFullscreen(settings.fullscreen)
-          setApiBaseUrl(settings.apiBaseUrl || 'http://127.0.0.1:8000/api/v1')
-        }
-      })
-    }
+    if (!window.electronAPI) return
+
+    Promise.all([
+      window.electronAPI.loadSettings(),
+      window.electronAPI.getSystemMemory ? window.electronAPI.getSystemMemory() : Promise.resolve(MAX_RAM),
+    ]).then(([settings, mem]) => {
+      const dynamicMax = mem > MIN_RAM ? mem : MAX_RAM
+      setMaxRam(dynamicMax)
+
+      if (settings) {
+        setRam(Math.min(settings.ram, dynamicMax))
+        setArgs(settings.args || DEFAULT_ARGS)
+        setOptimize(settings.optimize)
+        setFullscreen(settings.fullscreen)
+        setApiBaseUrl(settings.apiBaseUrl || 'http://127.0.0.1:8000/api/v1')
+      }
+    })
+
+    detectJava()
   }, [])
 
-  const handleSave = async () => {
-    if (window.electronAPI) {
-      setSaving(true)
-      const success = await window.electronAPI.saveSettings({ ram, args, optimize, fullscreen, apiBaseUrl })
-      setSaving(false)
-      if (success) {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
-      }
+  async function detectJava() {
+    if (!window.electronAPI?.detectJava) return
+    setDetectingJava(true)
+    try {
+      const result = await window.electronAPI.detectJava()
+      setJavaInfo(result.best)
+    } finally {
+      setDetectingJava(false)
     }
   }
 
-  const pct = ((ram - MIN_RAM) / (maxRam - MIN_RAM)) * 100
+  async function handleSave() {
+    if (!window.electronAPI) return
 
-  const sectionStyle = {
-    background: '#12121a',
-    border: '1px solid #1a1a2e',
-    borderRadius: '1rem',
-    padding: '1.25rem',
+    setSaving(true)
+    const success = await window.electronAPI.saveSettings({ ram, args, optimize, fullscreen, apiBaseUrl })
+    setSaving(false)
+    if (success) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    }
   }
 
+  const pct = useMemo(() => ((ram - MIN_RAM) / Math.max(maxRam - MIN_RAM, 1)) * 100, [maxRam, ram])
+
   return (
-    <div className="scrollbar-thin flex h-full flex-col overflow-y-auto pr-1">
-      {/* Header */}
-      <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
-        <span className="text-xs uppercase tracking-[0.25em]" style={{ color: 'rgba(0,240,255,0.7)' }}>
-          Ilg'or
-        </span>
-        <h1 className="font-display text-3xl md:text-4xl" style={{ color: '#ffffff', fontWeight: 900 }}>
-          <span style={{ color: '#00f0ff', textShadow: '0 0 16px rgba(0,240,255,0.7)' }}>Soz</span>
-          <span>lamalar</span>
-        </h1>
-        <p className="text-sm" style={{ color: '#8888aa' }}>
-          Java ishlashini va parametrlarini sozlang.
-        </p>
-      </motion.header>
-
-      {/* RAM section */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="mt-6 flex flex-col gap-5"
-        style={sectionStyle}
-      >
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#00f0ff' }}>
-            <MemoryStick className="size-4" /> RAM Hajmi
-          </span>
-          <motion.span
-            key={ram}
-            initial={{ scale: 1.3 }}
-            animate={{ scale: 1 }}
-            className="font-mono text-xl font-bold"
-            style={{ color: '#00f0ff', textShadow: '0 0 12px rgba(0,240,255,0.6)' }}
-          >
-            {ram} GB
-          </motion.span>
-        </div>
-
-        <div className="relative pt-1">
-          <div className="relative h-2 w-full rounded-full" style={{ background: '#1a1a2e' }}>
-            <div
-              className="absolute left-0 top-0 h-full rounded-full transition-all duration-200"
-              style={{
-                width: `${pct}%`,
-                background: 'linear-gradient(90deg, #00a8b3, #00f0ff)',
-                boxShadow: '0 0 8px rgba(0,240,255,0.5)',
-              }}
-            />
-            <div
-              className="absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
-              style={{
-                left: `${pct}%`,
-                borderColor: '#00f0ff',
-                background: '#0a0a0f',
-                boxShadow: '0 0 12px rgba(0,240,255,0.8)',
-              }}
-            />
+    <div className="flex h-full min-h-0 flex-col">
+      <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+        <span className="text-xs font-black uppercase tracking-[0.26em] text-cyan-300/75">CyberCraft Launcher</span>
+        <div className="mt-2 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-black text-white">
+              <span className="text-cyan-300 text-glow">Soz</span>lamalar
+            </h1>
           </div>
-          <input
-            type="range"
-            min={MIN_RAM}
-            max={maxRam}
-            value={ram}
-            onChange={(e) => setRam(Number(e.target.value))}
-            className="absolute inset-x-0 top-1 h-2 w-full cursor-pointer opacity-0"
-            aria-label="RAM hajmi (GB)"
-          />
-          <div className="mt-2 flex justify-between font-mono text-[11px]" style={{ color: '#8888aa' }}>
-            <span>{MIN_RAM} GB</span>
-            <span>{maxRam} GB</span>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Java args */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="mt-4 flex flex-col gap-3"
-        style={sectionStyle}
-      >
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#00f0ff' }}>
-            <Terminal className="size-4" /> Java Argumentlari
-          </span>
           <button
-            onClick={() => setArgs('-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200')}
-            className="flex items-center gap-1 text-xs transition-all"
-            style={{ color: '#8888aa' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#00f0ff' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#8888aa' }}
+            onClick={handleSave}
+            disabled={saving}
+            className={`flex h-11 items-center gap-2 rounded-2xl px-5 text-sm font-black transition disabled:opacity-70 ${
+              saved
+                ? 'bg-gradient-to-br from-emerald-300 to-green-500 text-[#071017]'
+                : 'bg-gradient-to-br from-cyan-300 to-emerald-300 text-[#071017] shadow-[0_0_24px_rgba(0,240,255,0.28)]'
+            }`}
           >
-            <RotateCcw className="size-3" /> Asl holatga qaytarish
+            {saved ? <CheckCircle2 className="size-4" /> : saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {saved ? 'Saqlandi' : saving ? 'Saqlanmoqda' : 'Saqlash'}
           </button>
         </div>
-        <textarea
-          value={args}
-          onChange={(e) => setArgs(e.target.value)}
-          rows={4}
-          spellCheck={false}
-          className="w-full resize-none rounded-xl p-3 font-mono text-sm outline-none transition-all"
-          style={{
-            background: '#0d0d14',
-            border: '1px solid #1a1a2e',
-            color: '#00f0ff',
-          }}
-          placeholder="-Xmx... custom JVM flags"
-          onFocus={e => {
-            e.target.style.borderColor = '#00f0ff'
-            e.target.style.boxShadow = '0 0 0 2px rgba(0,240,255,0.1)'
-          }}
-          onBlur={e => {
-            e.target.style.borderColor = '#1a1a2e'
-            e.target.style.boxShadow = 'none'
-          }}
-        />
-        <p className="flex items-center gap-1.5 text-xs" style={{ color: '#8888aa' }}>
-          <Cpu className="size-3.5" /> Faqat tajribali foydalanuvchilar uchun — noto&apos;g&apos;ri
-          argumentlar o&apos;yinning ishga tushishiga to&apos;sqinlik qilishi mumkin.
-        </p>
-      </motion.section>
+      </motion.header>
 
-      {/* API URL */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.12 }}
-        className="mt-4 flex flex-col gap-3"
-        style={sectionStyle}
-      >
-        <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#ff0060' }}>
-          <RadioTower className="size-4" /> Backend API
-        </span>
-        <input
-          value={apiBaseUrl}
-          onChange={(e) => setApiBaseUrl(e.target.value)}
-          spellCheck={false}
-          className="w-full rounded-xl px-3 py-2.5 font-mono text-sm outline-none transition-all"
-          style={{
-            background: '#0d0d14',
-            border: '1px solid #1a1a2e',
-            color: '#00f0ff',
-          }}
-          placeholder="http://127.0.0.1:8000/api/v1"
-          onFocus={e => {
-            e.target.style.borderColor = '#ff0060'
-            e.target.style.boxShadow = '0 0 0 2px rgba(255,0,96,0.12)'
-          }}
-          onBlur={e => {
-            e.target.style.borderColor = '#1a1a2e'
-            e.target.style.boxShadow = 'none'
-          }}
-        />
-        <p className="text-xs" style={{ color: '#8888aa' }}>
-          Login, server ro&apos;yxati, manifest sinxronizatsiyasi va launcher sessiyalari ushbu so&apos;nggi nuqtadan foydalanadi.
-        </p>
-      </motion.section>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_380px] gap-5 overflow-hidden">
+        <div className="min-h-0 overflow-y-auto pr-1 scrollbar-thin">
+          <div className="grid gap-5">
+            <SettingsCard icon={MemoryStick} title="RAM ajratish" description="Minecraft jarayoni uchun ajratiladigan xotira hajmi.">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#8ba0b8]">Launcher tavsiyasi: 6-8 GB</span>
+                <span className="font-mono text-2xl font-black text-cyan-300 text-glow">{ram} GB</span>
+              </div>
+              <div className="relative mt-5">
+                <div className="h-3 rounded-full bg-[#1c2738]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_14px_rgba(0,240,255,0.45)]"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <input
+                  type="range"
+                  min={MIN_RAM}
+                  max={maxRam}
+                  value={ram}
+                  onChange={(event) => setRam(Number(event.target.value))}
+                  className="absolute inset-x-0 top-0 h-3 w-full cursor-pointer opacity-0"
+                  aria-label="RAM hajmi"
+                />
+                <div className="mt-3 flex justify-between font-mono text-[11px] text-[#8ba0b8]">
+                  <span>{MIN_RAM} GB</span>
+                  <span>{maxRam} GB</span>
+                </div>
+              </div>
+            </SettingsCard>
 
-      {/* Toggles */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mt-4 grid gap-3"
-      >
-        <CyberToggle
-          checked={optimize}
-          onChange={setOptimize}
-          label="Java ishlashini optimallashtirish"
-          desc="Sozlangan GC bilan tezroq va barqarorroq ishga tushirish."
-        />
-        <CyberToggle
-          checked={fullscreen}
-          onChange={setFullscreen}
-          label="To'liq ekran rejimi"
-          desc="O'yinni to'liq ekranda ishga tushirish."
-        />
-      </motion.div>
+            <SettingsCard icon={HardDrive} title="Game va mods path" description="Launcher o‘yin fayllari va mod cache joylashuvini shu yerda ko‘rsatadi.">
+              <div className="space-y-3">
+                <PathRow label="Game path" value="D:/Games/CyberCraft/.minecraft" />
+                <PathRow label="Mods cache" value="D:/Games/CyberCraft/mod-cache" />
+              </div>
+            </SettingsCard>
 
-      {/* Save button */}
-      <div className="mt-6 flex justify-end pb-2">
-        <motion.button
-          whileHover={!saving ? { scale: 1.03 } : {}}
-          whileTap={!saving ? { scale: 0.97 } : {}}
-          onClick={handleSave}
-          disabled={saving}
-          className="relative flex items-center gap-2 overflow-hidden rounded-xl px-6 py-2.5 text-sm font-bold disabled:opacity-70 disabled:cursor-not-allowed transition-all"
-          style={{
-            background: saved
-              ? 'linear-gradient(135deg, #00ff88, #00cc66)'
-              : 'linear-gradient(135deg, #00f0ff, #00a8b3)',
-            color: '#0a0a0f',
-            boxShadow: saved
-              ? '0 0 24px rgba(0,255,136,0.4)'
-              : '0 0 20px rgba(0,240,255,0.35)',
-          }}
-        >
-          {/* Shine sweep */}
-          <span
-            className="pointer-events-none absolute inset-y-0 -left-full w-full"
-            style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-              animation: 'shine 2s ease infinite',
-            }}
-          />
-          {saved ? (
-            <span className="flex items-center gap-2 relative">
-              <span className="size-2 rounded-full" style={{ background: '#0a0a0f', boxShadow: '0 0 6px #0a0a0f' }} />
-              Sozlamalar saqlandi!
-            </span>
-          ) : (
-            <>
-              <Save className="size-4 relative" />
-              <span className="relative">{saving ? 'Saqlanmoqda...' : 'Sozlamalarni saqlash'}</span>
-            </>
-          )}
-        </motion.button>
+            <SettingsCard icon={Terminal} title="Java argumentlari" description="Tajribali foydalanuvchilar uchun JVM flaglar.">
+              <textarea
+                value={args}
+                onChange={(event) => setArgs(event.target.value)}
+                rows={4}
+                spellCheck={false}
+                className="w-full resize-none rounded-2xl border border-[#263246] bg-[#0d1219] p-4 font-mono text-sm text-cyan-200 outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.12)]"
+                placeholder="-Xmx... custom JVM flags"
+              />
+              <button
+                onClick={() => setArgs(DEFAULT_ARGS)}
+                className="mt-3 flex items-center gap-2 text-xs font-bold text-[#8ba0b8] transition hover:text-cyan-300"
+              >
+                <RotateCcw className="size-3.5" />
+                Asl holatga qaytarish
+              </button>
+            </SettingsCard>
+          </div>
+        </div>
+
+        <aside className="min-h-0 overflow-y-auto pr-1 scrollbar-thin">
+          <div className="grid gap-4">
+            <SettingsCard icon={Cpu} title="Java path/version" description="Launcher topgan eng mos Java runtime.">
+              <div className="rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-300/10">
+                    <ShieldCheck className="size-5 text-emerald-300" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-bold text-white">
+                      {javaInfo ? `Java ${javaInfo.version}` : detectingJava ? 'Aniqlanmoqda...' : 'Java aniqlanmagan'}
+                    </div>
+                    <div className="truncate text-xs text-[#8ba0b8]">{javaInfo?.vendor || 'Detect tugmasini bosing'}</div>
+                  </div>
+                </div>
+                <div className="mt-3 truncate font-mono text-[11px] text-[#8ba0b8]">{javaInfo?.path || 'Path mavjud emas'}</div>
+                <button
+                  onClick={detectJava}
+                  disabled={detectingJava}
+                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#2b3950] text-xs font-black text-[#dfeaff] transition hover:border-cyan-300/40 disabled:opacity-70"
+                >
+                  {detectingJava ? <Loader2 className="size-4 animate-spin" /> : <RefreshIcon />}
+                  Qayta aniqlash
+                </button>
+              </div>
+            </SettingsCard>
+
+            <SettingsCard icon={ToggleRight} title="Launcher xatti-harakati" description="O‘yin ochilganda oynaning ishlashini boshqarish.">
+              <div className="space-y-3">
+                <ToggleRow
+                  checked={autoClose}
+                  onChange={setAutoClose}
+                  label="Launcher auto-close"
+                  desc="O‘yin ochilganda launcherni avtomatik yopish."
+                />
+                <ToggleRow
+                  checked={fullscreen}
+                  onChange={setFullscreen}
+                  label="To‘liq ekran"
+                  desc="Minecraft oynasini fullscreen rejimida ishga tushirish."
+                />
+                <ToggleRow
+                  checked={optimize}
+                  onChange={setOptimize}
+                  label="Java optimizatsiya"
+                  desc="Tavsiya etilgan GC flaglar bilan barqaror launch."
+                />
+              </div>
+            </SettingsCard>
+
+            <SettingsCard icon={Database} title="Cache va backend" description="Mod cache va API endpoint.">
+              <input
+                value={apiBaseUrl}
+                onChange={(event) => setApiBaseUrl(event.target.value)}
+                spellCheck={false}
+                className="h-11 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-3 font-mono text-xs text-cyan-200 outline-none transition focus:border-cyan-300"
+              />
+              <button className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-300/25 bg-red-400/10 text-xs font-black text-red-200 transition hover:border-red-300/45">
+                <Database className="size-4" />
+                Cache tozalash
+              </button>
+            </SettingsCard>
+          </div>
+        </aside>
       </div>
     </div>
   )
+}
+
+function RefreshIcon() {
+  return <RotateCcw className="size-4" />
 }

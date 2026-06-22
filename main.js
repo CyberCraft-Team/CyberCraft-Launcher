@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
@@ -628,6 +628,10 @@ ipcMain.on('window-minimize', () => {
 
 ipcMain.on('window-close', () => {
   if (mainWindow) mainWindow.close()
+})
+
+ipcMain.on('open-external', (event, url) => {
+  shell.openExternal(url)
 })
 
 function startLocalServer() {

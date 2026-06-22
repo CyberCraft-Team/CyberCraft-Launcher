@@ -14,7 +14,7 @@ const audiowide = Audiowide({
 })
 
 export const metadata: Metadata = {
-  title: 'CyberCraft Launcher',
+  title: 'CyberCraft',
   description:
     'A premium, animation-rich Minecraft launcher — play, install mod loaders, and tune advanced settings.',
 }

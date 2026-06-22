@@ -6,7 +6,7 @@ const { execSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const STAGING = path.join(ROOT, '.staging');
 const DIST = path.join(ROOT, 'dist');
-const APP_NAME = 'CyberCraft Launcher';
+const APP_NAME = 'CyberCraft';
 
 console.log('Cleaning staging directory...');
 if (fs.existsSync(STAGING)) {
@@ -92,8 +92,8 @@ const options = {
   win32metadata: {
     CompanyName: 'CyberCraft',
     FileDescription: 'CyberCraft Minecraft Launcher',
-    OriginalFilename: 'CyberCraft Launcher.exe',
-    ProductName: 'CyberCraft Launcher',
+    OriginalFilename: 'CyberCraft.exe',
+    ProductName: 'CyberCraft',
   },
   overwrite: true,
   asar: true,

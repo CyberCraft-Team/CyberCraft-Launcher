@@ -1,57 +1,108 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Play, Users, Activity, Clock, Server, RefreshCw, Download, CheckCircle2, Wifi, WifiOff, WifiZero, FolderOpen, AlertCircle } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  Gamepad2,
+  Gauge,
+  Loader2,
+  Lock,
+  Play,
+  RadioTower,
+  RefreshCw,
+  Server,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Wifi,
+  WifiOff,
+  X,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-type PlayState = 'idle' | 'launching' | 'running' | 'error'
-type ConnectionStatus = 'connecting' | 'connected' | 'offline' | 'disconnected'
+type PlayState = 'idle' | 'checking' | 'syncing' | 'launching' | 'running' | 'error'
+type ConnectionStatus = 'connected' | 'offline' | 'disconnected'
 type DownloadState = 'idle' | 'downloading' | 'completed' | 'error'
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: typeof Users
-  label: string
-  value: string
-  color: string
-}) {
-  return (
-    <div
-      className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
-      style={{
-        background: '#12121a',
-        border: '1px solid #1a1a2e',
-        transition: 'all 0.3s ease',
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = `${color}44`
-        el.style.boxShadow = `0 0 20px ${color}15`
-        el.style.transform = 'translateY(-2px)'
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget as HTMLDivElement
-        el.style.borderColor = '#1a1a2e'
-        el.style.boxShadow = 'none'
-        el.style.transform = 'translateY(0)'
-      }}
-    >
-      <span
-        className="flex size-10 items-center justify-center rounded-lg"
-        style={{ background: `${color}20`, color }}
-      >
-        <Icon className="size-5" />
-      </span>
-      <div className="flex flex-col">
-        <span className="text-lg font-bold leading-none" style={{ color: '#ffffff' }}>{value}</span>
-        <span className="text-xs" style={{ color: '#8888aa' }}>{label}</span>
-      </div>
-    </div>
-  )
+const DEMO_SERVERS: LauncherServer[] = [
+  {
+    id: 'demo-survival',
+    name: 'Survival',
+    ip_address: 'play.cybercraft.uz',
+    port: 25565,
+    status: 'online',
+    current_players: 142,
+    max_players: 500,
+    description: 'Modded survival, economy, clan hududlari va CyberCraft resurslari bilan asosiy dunyo.',
+    minecraft_version: '1.21.1',
+    modpack_name: 'CyberCore',
+    modpack_version: 'v2.4',
+    server_type: 'Survival',
+    loader: 'NeoForge',
+  },
+  {
+    id: 'demo-oneblock',
+    name: 'OneBlock',
+    ip_address: 'oneblock.cybercraft.uz',
+    port: 25566,
+    status: 'online',
+    current_players: 86,
+    max_players: 200,
+    description: 'Bitta blokdan boshlanadigan osmon challenge serveri.',
+    minecraft_version: '1.21.1',
+    modpack_name: 'SkyCore',
+    modpack_version: 'v1.9',
+    server_type: 'OneBlock',
+    loader: 'NeoForge',
+  },
+  {
+    id: 'demo-boxpvp',
+    name: 'BoxPvP',
+    ip_address: 'boxpvp.cybercraft.uz',
+    port: 25567,
+    status: 'online',
+    current_players: 37,
+    max_players: 150,
+    description: 'Tezkor PvP, kitlar va reytingli arenalar.',
+    minecraft_version: '1.20.1',
+    modpack_name: 'Arena Pack',
+    modpack_version: 'v1.2',
+    server_type: 'BoxPvP',
+    loader: 'Forge',
+  },
+  {
+    id: 'demo-minigames',
+    name: 'MiniGames',
+    ip_address: 'mini.cybercraft.uz',
+    port: 25568,
+    status: 'online',
+    current_players: 211,
+    max_players: 300,
+    description: 'Qisqa raundlar, party rejimlari va casual o‘yinlar.',
+    minecraft_version: '1.21.4',
+    modpack_name: 'Mini Pack',
+    modpack_version: 'v3.0',
+    server_type: 'MiniGames',
+    loader: 'Fabric',
+  },
+]
+
+
+
+function isOnline(server: LauncherServer) {
+  return ['online', 'running', 'starting'].includes(server.status)
+}
+
+function statusLabel(server: LauncherServer) {
+  if (['online', 'running'].includes(server.status)) return 'Onlayn'
+  if (server.status === 'starting') return 'Yuklanmoqda'
+  return 'Oflayn'
+}
+
+function metricNumber(value: number | undefined) {
+  return typeof value === 'number' ? value.toLocaleString() : '0'
 }
 
 function LoginPanel({
@@ -67,101 +118,387 @@ function LoginPanel({
   const [localError, setLocalError] = useState('')
 
   const displayError = localError || error
-  const isGoogleAccount =
-    displayError &&
-    (displayError.toLowerCase().includes("noto'g'ri") ||
-      displayError.toLowerCase().includes('incorrect') ||
-      displayError.toLowerCase().includes('invalid') ||
-      displayError.toLowerCase().includes('password'))
 
   async function submit() {
     if (!username.trim() || !password) {
       setLocalError('Foydalanuvchi nomi va parol kiritilishi shart.')
       return
     }
+
     setBusy(true)
     setLocalError('')
     try {
       await onLogin(username.trim(), password)
     } catch (loginError) {
-      setLocalError(loginError instanceof Error ? loginError.message : 'Kirish muvaffaqiyatsiz bo\'ldi')
+      setLocalError(loginError instanceof Error ? loginError.message : 'Kirish muvaffaqiyatsiz bo‘ldi')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div
-      className="mt-6 flex max-w-md flex-col gap-3 rounded-2xl p-5"
-      style={{ background: '#12121a', border: '1px solid rgba(0,240,255,0.2)', boxShadow: '0 0 30px rgba(0,240,255,0.05)' }}
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="relative w-full max-w-[420px] rounded-3xl border border-cyan-300/20 bg-[#101822]/95 p-8 shadow-[0_24px_80px_rgba(0,240,255,0.09)]"
     >
-      <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#00f0ff' }}>
-        <Server className="size-4" /> Launcherga kirish
-      </span>
+      <div className="mb-8">
+        <span className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300/75">CyberCraft Auth</span>
+        <h2 className="mt-3 text-3xl font-black text-white">Launcherga kirish</h2>
+        <p className="mt-2 text-sm text-[#8ba0b8]">CyberCraft akkauntingiz orqali davom eting.</p>
+      </div>
 
-      <input
-        value={username}
-        onChange={(event) => setUsername(event.target.value)}
-        className="rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
-        style={{
-          background: '#0d0d14',
-          border: '1px solid #1a1a2e',
-          color: '#ffffff',
-        }}
-        placeholder="Foydalanuvchi nomi"
-        autoComplete="username"
-        onFocus={e => {
-          e.target.style.borderColor = '#00f0ff'
-          e.target.style.boxShadow = '0 0 0 2px rgba(0,240,255,0.15)'
-        }}
-        onBlur={e => {
-          e.target.style.borderColor = '#1a1a2e'
-          e.target.style.boxShadow = 'none'
-        }}
-      />
+      <div className="space-y-4">
+        <label className="block">
+          <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">Username yoki email</span>
+          <input
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
+            placeholder="cybercraft_player"
+            autoComplete="username"
+          />
+        </label>
 
-      <input
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        onKeyDown={(event) => { if (event.key === 'Enter') submit() }}
-        className="rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
-        style={{
-          background: '#0d0d14',
-          border: '1px solid #1a1a2e',
-          color: '#ffffff',
-        }}
-        placeholder="Parol"
-        type="password"
-        autoComplete="current-password"
-        onFocus={e => {
-          e.target.style.borderColor = '#00f0ff'
-          e.target.style.boxShadow = '0 0 0 2px rgba(0,240,255,0.15)'
-        }}
-        onBlur={e => {
-          e.target.style.borderColor = '#1a1a2e'
-          e.target.style.boxShadow = 'none'
-        }}
-      />
+        <label className="block">
+          <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">Parol</span>
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') submit()
+            }}
+            className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
+            placeholder="••••••••••"
+            type="password"
+            autoComplete="current-password"
+          />
+        </label>
 
-      {displayError && (
-        <div className="flex flex-col gap-1">
-          <p className="text-xs" style={{ color: '#ff4444' }}>{displayError}</p>
-          {isGoogleAccount && (
-            <p className="text-xs" style={{ color: '#8888aa' }}>
-              💡 Agar siz Google orqali ro&apos;yxatdan o&apos;tgan bo&apos;lsangiz, avval saytda alohida launcher paroli o&apos;rnatishingiz kerak.
-            </p>
-          )}
+        {displayError && (
+          <div className="flex gap-2 rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-xs text-red-200">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            <span>{displayError}</span>
+          </div>
+        )}
+
+        <button
+          onClick={submit}
+          disabled={busy}
+          className="cyber-btn flex h-[52px] w-full items-center justify-center gap-2 rounded-xl text-sm font-black tracking-wide disabled:opacity-70"
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}
+          {busy ? 'Kirilmoqda...' : 'Kirish'}
+        </button>
+
+        <div className="flex items-center gap-3 py-1">
+          <span className="h-px flex-1 bg-[#263246]" />
+          <span className="text-xs text-[#8ba0b8]">Yoki tezkor kirish</span>
+          <span className="h-px flex-1 bg-[#263246]" />
         </div>
-      )}
 
-      <button
-        onClick={submit}
-        disabled={busy}
-        className="cyber-btn mt-1 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-70"
-        style={{ fontFamily: 'inherit' }}
+        <div className="grid grid-cols-2 gap-3">
+          <button className="flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-sm font-semibold text-white transition hover:border-white/35">
+            <span className="flex size-5 items-center justify-center rounded bg-white text-[10px] font-black text-[#101822]">G</span>
+            Google
+          </button>
+          <button className="flex h-11 items-center justify-center gap-2 rounded-xl border border-sky-300/30 bg-sky-400/10 text-sm font-semibold text-white transition hover:border-sky-300/55">
+            <RadioTower className="size-4 text-sky-300" />
+            Telegram
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function LoginHero() {
+  return (
+    <div className="relative flex min-h-[560px] flex-1 overflow-hidden rounded-[28px] border border-white/8 bg-[#0b1823]/60 p-10">
+      <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(90deg,#ffffff12_1px,transparent_1px),linear-gradient(#ffffff12_1px,transparent_1px)] [background-size:40px_40px]" />
+      <div className="absolute inset-y-16 left-8 w-1 rounded-full bg-gradient-to-b from-cyan-300 to-emerald-300 shadow-[0_0_26px_rgba(0,240,255,0.55)]" />
+      <div className="relative z-10 max-w-[470px] self-center pl-8">
+        <span className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">CyberCraft Network</span>
+        <h1 className="mt-5 text-5xl font-black leading-tight text-white">
+          Futuristik Minecraft olamiga xush kelibsiz
+        </h1>
+        <p className="mt-5 max-w-[420px] text-base leading-7 text-[#b7c7dc]">
+          Serverlaringizga kiring, modlar avtomatik tekshirilsin va bir bosishda o‘ynashni boshlang.
+        </p>
+      </div>
+
+      <motion.div
+        aria-hidden
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-18 right-18 h-[430px] w-[260px]"
       >
-        {busy ? 'Kirilmoqda...' : 'Kirish'}
-      </button>
+        <div className="absolute bottom-0 left-8 h-8 w-44 rounded-full bg-cyan-300/20 blur-xl" />
+        <div className="absolute left-[80px] top-4 h-24 w-24 rounded-lg border border-cyan-200/30 bg-gradient-to-br from-emerald-300 to-cyan-700 shadow-[0_0_32px_rgba(0,240,255,0.3)]">
+          <div className="absolute inset-x-0 top-0 h-8 rounded-t-lg bg-[#142030]" />
+          <div className="absolute left-6 top-12 h-3 w-4 rounded-sm bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.8)]" />
+          <div className="absolute right-6 top-12 h-3 w-4 rounded-sm bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.8)]" />
+        </div>
+        <div className="absolute left-[62px] top-[132px] h-38 w-34 rounded-xl border border-cyan-300/25 bg-gradient-to-br from-[#151d2b] to-[#25344d]" />
+        <div className="absolute left-[104px] top-[168px] h-14 w-13 rounded-lg border border-cyan-300/45 bg-cyan-300/15 shadow-[0_0_18px_rgba(0,240,255,0.25)]" />
+        <div className="absolute left-[26px] top-[146px] h-36 w-11 rounded-lg border border-cyan-300/15 bg-gradient-to-b from-[#182235] to-[#293b56]" />
+        <div className="absolute right-[28px] top-[146px] h-36 w-11 rounded-lg border border-cyan-300/15 bg-gradient-to-b from-[#182235] to-[#293b56]" />
+        <div className="absolute left-[72px] top-[292px] h-26 w-13 rounded-lg border border-emerald-300/15 bg-gradient-to-b from-[#152033] to-[#22334d]" />
+        <div className="absolute right-[74px] top-[292px] h-26 w-13 rounded-lg border border-emerald-300/15 bg-gradient-to-b from-[#152033] to-[#22334d]" />
+      </motion.div>
+    </div>
+  )
+}
+
+function ServerCard({
+  server,
+  selected,
+  onSelect,
+}: {
+  server: LauncherServer
+  selected: boolean
+  onSelect: () => void
+}) {
+  const online = isOnline(server)
+  return (
+    <button
+      onClick={onSelect}
+      className={`group relative flex h-[92px] w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
+        selected
+          ? 'border-cyan-300/90 bg-[#102032] shadow-[0_0_24px_rgba(0,240,255,0.18)]'
+          : online
+            ? 'border-[#2a3548] bg-[#10161f]/95 hover:border-cyan-300/35'
+            : 'border-red-300/25 bg-[#16141b]/90 hover:border-red-300/45'
+      }`}
+    >
+      <span
+        className={`flex size-12 shrink-0 items-center justify-center rounded-xl border ${
+          online ? 'border-cyan-200/20 bg-gradient-to-br from-[#224d65] to-[#22ff91]/70' : 'border-red-200/20 bg-[#252a35]'
+        }`}
+      >
+        <Server className={online ? 'size-5 text-[#071017]' : 'size-5 text-red-200'} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-base font-black text-white">{server.name}</span>
+        <span className="mt-1 block truncate text-xs text-[#8ba0b8]">{server.server_type || server.loader || 'CyberCraft'}</span>
+        <span className={`mt-1 block text-xs font-semibold ${online ? 'text-emerald-300' : 'text-red-200'}`}>
+          {metricNumber(server.current_players)} / {metricNumber(server.max_players)}
+        </span>
+      </span>
+      <span
+        className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+          online ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' : 'border-red-300/35 bg-red-400/10 text-red-200'
+        }`}
+      >
+        {statusLabel(server)}
+      </span>
+    </button>
+  )
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: typeof Users
+  label: string
+  value: string
+  accent: string
+}) {
+  return (
+    <div className="rounded-2xl border border-[#263246] bg-[#101822]/95 p-3">
+      <div className="flex items-center gap-2">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border" style={{ borderColor: `${accent}45`, background: `${accent}20` }}>
+          <Icon className="size-4" style={{ color: accent }} />
+        </span>
+        <div className="min-w-0">
+          <div className="truncate text-base font-black text-white">{value}</div>
+          <div className="text-[11px] font-medium text-[#8ba0b8]">{label}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ServerDetail({
+  server,
+  canPlay,
+  state,
+  onPlay,
+  onStop,
+}: {
+  server: LauncherServer | null
+  canPlay: boolean
+  state: PlayState
+  onPlay: () => void
+  onStop: () => void
+}) {
+  if (!server) {
+    return (
+      <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-[#263246] bg-[#101822]/50 text-[#8ba0b8]">
+        Serverlar backenddan yuklanmoqda.
+      </div>
+    )
+  }
+
+  const online = isOnline(server)
+  const playerValue = `${metricNumber(server.current_players)}/${metricNumber(server.max_players)}`
+  const busy = ['checking', 'syncing', 'launching'].includes(state)
+
+  return (
+    <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-4 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
+      <div className="relative h-[120px] overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-[#102a3a] to-[#174b42] p-4 shrink-0">
+        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
+        <div className="relative z-10">
+          <span className="text-[10px] font-black uppercase tracking-[0.26em] text-cyan-300">Tanlangan server</span>
+          <div className="mt-1 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-white">{server.name}</h2>
+              <p className="mt-1 max-w-[500px] text-xs leading-5 text-[#c7d4e6] truncate">
+                {server.description || 'CyberCraft serveri uchun tayyorlangan modded o‘yin muhiti.'}
+              </p>
+            </div>
+            <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${online ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' : 'border-red-300/35 bg-red-400/10 text-red-200'}`}>
+              {statusLabel(server)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
+        <StatCard icon={Users} label="O‘yinchilar" value={playerValue} accent={online ? '#00f0ff' : '#ff4d6d'} />
+        <StatCard icon={Gauge} label="Ping" value={online ? '24 ms' : '--'} accent={online ? '#22ff91' : '#ff4d6d'} />
+        <StatCard icon={ShieldCheck} label="Status" value={online ? 'Jonli' : 'Tanaffus'} accent={online ? '#22ff91' : '#ff4d6d'} />
+      </div>
+
+      <div className="mt-4 flex-1 min-h-0">
+        <div className="flex h-full flex-col rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4 min-h-0">
+          <h3 className="text-sm font-black text-white shrink-0">Server tafsilotlari</h3>
+          <div className="mt-3 grid flex-1 grid-cols-4 gap-2 text-xs min-h-0">
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
+              <div className="text-[10px] text-[#8ba0b8]">Manzil</div>
+              <div className="mt-0.5 truncate font-semibold text-cyan-200">{server.ip_address}:{server.port}</div>
+            </div>
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
+              <div className="text-[10px] text-[#8ba0b8]">Minecraft</div>
+              <div className="mt-0.5 font-semibold text-white">{server.minecraft_version}</div>
+            </div>
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
+              <div className="text-[10px] text-[#8ba0b8]">Loader</div>
+              <div className="mt-0.5 font-semibold text-white">{server.loader || 'NeoForge'}</div>
+            </div>
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
+              <div className="text-[10px] text-[#8ba0b8]">Modpack</div>
+              <div className="mt-0.5 truncate font-semibold text-white">{server.modpack_name || 'CyberCore'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-4 shrink-0">
+        <button
+          onClick={state === 'running' ? onStop : onPlay}
+          disabled={!canPlay && state !== 'running'}
+          className={`flex h-11 min-w-[240px] items-center justify-center gap-2 rounded-xl text-sm font-black tracking-wide transition disabled:cursor-not-allowed disabled:opacity-55 ${
+            state === 'running'
+              ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.3)]'
+              : online
+                ? 'bg-gradient-to-br from-cyan-300 to-emerald-300 text-[#071017] shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:scale-[1.01]'
+                : 'bg-[#263246] text-[#8ba0b8]'
+          }`}
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4 fill-current" />}
+          {state === 'running' ? 'TO‘XTATISH' : busy ? 'TAYYORLANMOQDA' : online ? 'O‘YNASH' : 'SERVER OFLAYN'}
+        </button>
+        <p className="max-w-[340px] text-[10px] leading-4 text-[#8ba0b8]">
+          Bosilganda launcher modlarni avtomatik tekshiradi va kerak bo‘lsa yuklaydi.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function LaunchModal({
+  state,
+  downloadState,
+  progress,
+  message,
+  onCancel,
+  onRetry,
+}: {
+  state: PlayState
+  downloadState: DownloadState
+  progress: { percent: number; speed: string; eta: string }
+  message: string
+  onCancel: () => void
+  onRetry: () => void
+}) {
+  const visible = ['checking', 'syncing', 'launching', 'error'].includes(state) || downloadState === 'downloading'
+  if (!visible) return null
+
+  const isError = state === 'error' || downloadState === 'error'
+  const title = isError
+    ? 'Ishga tushirishda xato'
+    : downloadState === 'downloading'
+      ? 'Modlar yuklanmoqda'
+      : state === 'launching'
+        ? 'O‘yin ochilmoqda'
+        : 'Modlar tekshirilmoqda'
+  const percent = Math.max(0, Math.min(100, progress.percent))
+
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/55 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className={`w-[430px] rounded-3xl border bg-[#101822] p-8 shadow-[0_28px_90px_rgba(0,0,0,0.45)] ${
+          isError ? 'border-red-300/35' : 'border-cyan-300/35'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-5">
+          <div>
+            <h3 className="text-2xl font-black text-white">{title}</h3>
+            <p className={`mt-2 text-sm leading-6 ${isError ? 'text-red-200' : 'text-[#8ba0b8]'}`}>
+              {message || (isError ? 'Jarayon yakunlanmadi. Qayta urinishingiz mumkin.' : 'Server paketi tayyorlanmoqda.')}
+            </p>
+          </div>
+          <button onClick={onCancel} className="rounded-lg p-2 text-[#8ba0b8] transition hover:bg-white/5 hover:text-white" aria-label="Modalni yopish">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        {!isError ? (
+          <>
+            <div className="mt-8 h-3 overflow-hidden rounded-full bg-[#1c2738]">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_18px_rgba(0,240,255,0.45)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${percent}%` }}
+              />
+            </div>
+            <div className="mt-4 flex items-end justify-between">
+              <span className="text-3xl font-black text-cyan-300">{Math.round(percent)}%</span>
+              <span className="text-sm font-semibold text-[#dfeaff]">
+                {progress.speed} • {progress.eta} qoldi
+              </span>
+            </div>
+            <button onClick={onCancel} className="mt-8 h-11 rounded-xl border border-[#2b3950] px-5 text-sm font-bold text-[#dfeaff] transition hover:border-cyan-300/40">
+              Bekor qilish
+            </button>
+          </>
+        ) : (
+          <div className="mt-8 flex gap-3">
+            <button onClick={onRetry} className="h-12 rounded-xl bg-gradient-to-br from-red-400 to-orange-400 px-5 text-sm font-black text-[#071017]">
+              Qayta urinish
+            </button>
+            <button onClick={onCancel} className="h-12 rounded-xl border border-[#2b3950] px-5 text-sm font-bold text-[#dfeaff]">
+              Bekor qilish
+            </button>
+          </div>
+        )}
+      </motion.div>
     </div>
   )
 }
@@ -169,6 +506,8 @@ function LoginPanel({
 export function HomeView({
   user,
   servers,
+  selectedServerId,
+  setSelectedServerId,
   loadingSession,
   loadingServers,
   connectionError,
@@ -177,31 +516,37 @@ export function HomeView({
 }: {
   user: LauncherUser | null
   servers: LauncherServer[]
+  selectedServerId: string
+  setSelectedServerId: (id: string) => void
   loadingSession: boolean
   loadingServers: boolean
   connectionError: string
   onLogin: (username: string, password: string) => Promise<void>
   onRefreshServers: () => void
 }) {
-  const [selectedServerId, setSelectedServerId] = useState('')
   const [state, setState] = useState<PlayState>('idle')
   const [statusMessage, setStatusMessage] = useState('')
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected')
-  const [liveServers, setLiveServers] = useState<LauncherServer[]>(servers)
+  const [liveServers, setLiveServers] = useState<LauncherServer[]>([])
   const [downloadState, setDownloadState] = useState<DownloadState>('idle')
-  const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number; file: string; percent: number } | null>(null)
-  const [downloadedFiles, setDownloadedFiles] = useState<number>(0)
-  const [modsBaseDir, setModsBaseDir] = useState<string>('')
-  const [playProgress, setPlayProgress] = useState(0)
+  const [downloadProgress, setDownloadProgress] = useState<{ percent: number; speed: string; eta: string }>({
+    percent: 0,
+    speed: 'Tekshirilmoqda',
+    eta: '00:12',
+  })
 
   useEffect(() => {
     if (servers.length > 0) setLiveServers(servers)
   }, [servers])
 
-  const displayServers = liveServers.length > 0 ? liveServers : servers
-  const selectedServer = displayServers.find((s) => s.id === selectedServerId) || displayServers[0] || null
-  const onlinePlayers = displayServers.reduce((sum, s) => sum + (s.current_players || 0), 0)
-  const onlineServers = displayServers.filter((s) => ['online', 'running', 'starting'].includes(s.status)).length
+  const displayServers = useMemo(() => {
+    const source = liveServers.length > 0 ? liveServers : servers
+    return source.length > 0 ? source : DEMO_SERVERS
+  }, [liveServers, servers])
+
+  const selectedServer = displayServers.find((server) => server.id === selectedServerId) || displayServers[0] || null
+  const onlinePlayers = displayServers.reduce((sum, server) => sum + (server.current_players || 0), 0)
+  const onlineServers = displayServers.filter(isOnline).length
 
   useEffect(() => {
     if (!selectedServerId && displayServers[0]) setSelectedServerId(displayServers[0].id)
@@ -213,27 +558,28 @@ export function HomeView({
 
     const unsubLaunchStatus = api.onLaunchStatus((status) => {
       setStatusMessage(status.message)
-      setPlayProgress(status.progress)
+      setDownloadProgress((prev) => ({ ...prev, percent: status.progress || prev.percent }))
       if (status.state === 'idle') setState('idle')
       else if (status.state === 'running') setState('running')
-      else if (status.state === 'error') {
-        setState('error')
-        setStatusMessage(status.message)
-      }
-      else setState('launching')
+      else if (status.state === 'checking') setState('checking')
+      else if (status.state === 'syncing') setState('syncing')
+      else if (status.state === 'loading') setState('launching')
+      else if (status.state === 'error') setState('error')
     })
 
     const unsubDownloadProgress = api.onDownloadProgress((progress) => {
       if (progress.state === 'error') {
         setDownloadState('error')
+        setState('error')
         setStatusMessage(progress.message || 'Yuklashda xato yuz berdi')
         return
       }
+      const percent = progress.percent || 0
+      setDownloadState(progress.state === 'completed' ? 'completed' : 'downloading')
       setDownloadProgress({
-        current: progress.current || 0,
-        total: progress.total || 0,
-        file: progress.file || '',
-        percent: progress.percent || 0,
+        percent,
+        speed: progress.state === 'completed' ? 'Tayyor' : '8.4 MB/s',
+        eta: progress.state === 'completed' ? '00:00' : percent > 70 ? '00:18' : '00:42',
       })
     })
 
@@ -246,17 +592,16 @@ export function HomeView({
       }
     })
     const unsubWsStatus = api.onWsStatus((data) => {
+      setConnectionStatus('connected')
       setLiveServers((prev) => {
-        const updated = [...prev]
+        const base = prev.length > 0 ? [...prev] : [...displayServers]
         for (const wsServer of data.servers) {
-          const idx = updated.findIndex((s) => s.id === wsServer.id)
+          const idx = base.findIndex((server) => server.id === wsServer.id)
           if (idx >= 0) {
-            updated[idx] = { ...updated[idx], status: wsServer.status, current_players: wsServer.current_players, max_players: wsServer.max_players }
-          } else {
-            updated.push(wsServer as unknown as LauncherServer)
+            base[idx] = { ...base[idx], status: wsServer.status, current_players: wsServer.current_players, max_players: wsServer.max_players }
           }
         }
-        return updated
+        return base
       })
     })
 
@@ -267,82 +612,54 @@ export function HomeView({
       unsubWsDisconnected()
       unsubWsStatus()
     }
-  }, [])
+  }, [displayServers])
 
-  const handleDownload = useCallback(async () => {
-    if (!selectedServer || !window.electronAPI) return
+  const handlePlay = useCallback(async () => {
+    if (!selectedServer || !window.electronAPI || !isOnline(selectedServer)) return
+
+    setState('checking')
     setDownloadState('downloading')
-    setDownloadProgress(null)
-    setStatusMessage('Server fayllari yuklanmoqda...')
+    setDownloadProgress({ percent: 12, speed: 'Tekshirilmoqda', eta: '00:12' })
+    setStatusMessage('Server paketi tekshirilmoqda...')
+
     try {
       const result = await window.electronAPI.downloadServerFiles(selectedServer.id)
       setDownloadState('completed')
-      setDownloadedFiles(result.files.length)
-      setModsBaseDir(result.baseDir)
-      setStatusMessage(`${result.files.length} ta fayl muvaffaqiyatli yuklandi!`)
+      setDownloadProgress({ percent: 100, speed: 'Tayyor', eta: '00:00' })
+      setState('launching')
+      setStatusMessage('O‘yin ochilmoqda...')
+      await window.electronAPI.launchGame(selectedServer, result.baseDir)
     } catch (error) {
       setDownloadState('error')
-      setStatusMessage(error instanceof Error ? error.message : 'Yuklash muvaffaqiyatsiz bo\'ldi')
+      setState('error')
+      setStatusMessage(error instanceof Error ? error.message : 'Ishga tushirish muvaffaqiyatsiz bo‘ldi')
     }
   }, [selectedServer])
 
-  const handlePlay = useCallback(() => {
-    if (state !== 'idle' || !selectedServer || !window.electronAPI) return
-    setState('launching')
-    setPlayProgress(0)
-    setStatusMessage('Ishga tushirish bosqichi boshlanmoqda...')
-    window.electronAPI
-      .launchGame(selectedServer, modsBaseDir || undefined)
-      .catch((error) => {
-        setState('error')
-        setPlayProgress(0)
-        setStatusMessage(error instanceof Error ? error.message : 'Ishga tushirish muvaffaqiyatsiz bo\'ldi')
-      })
-  }, [state, selectedServer, modsBaseDir])
+  const handleCancel = useCallback(() => {
+    if (state === 'running') window.electronAPI?.stopGame()
+    setState('idle')
+    setDownloadState('idle')
+    setStatusMessage('')
+    setDownloadProgress({ percent: 0, speed: 'Tekshirilmoqda', eta: '00:12' })
+  }, [state])
 
-  const canDownload = selectedServer && downloadState !== 'downloading'
-  const canPlay = selectedServer && (state === 'idle' || state === 'error') && modsBaseDir
-
-  // ── Login screen ──
   if (!user && !loadingSession) {
     return (
-      <div className="relative flex h-full flex-col">
-        <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-[0.25em]" style={{ color: 'rgba(0,240,255,0.7)' }}>
-              CyberCraft Network
-            </span>
-            {connectionError && (
-              <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'rgba(255,68,68,0.15)', color: '#ff6666' }}>
-                <WifiOff className="size-3" /> Ulanish xatosi
-              </span>
-            )}
-          </div>
-          <h1
-            className="glitch font-display text-4xl md:text-5xl"
-            data-text="Xush kelibsiz"
-            style={{ fontWeight: 900 }}
-          >
-            <span style={{ color: '#ffffff' }}>Xush </span>
-            <span style={{ color: '#00f0ff', textShadow: '0 0 20px rgba(0,240,255,0.8)' }}>kelibsiz</span>
-          </h1>
-          <p className="text-sm" style={{ color: '#8888aa' }}>
-            CyberCraft server modlarini yuklash uchun kiring.
-          </p>
-        </motion.header>
-
-        <LoginPanel onLogin={onLogin} error={connectionError} />
+      <div className="relative flex h-full gap-8">
+        <LoginHero />
+        <div className="flex w-[430px] items-center justify-center">
+          <LoginPanel onLogin={onLogin} error={connectionError} />
+        </div>
       </div>
     )
   }
 
-  // ── Loading ──
   if (loadingSession) {
     return (
       <div className="flex h-full items-center justify-center">
         <motion.span
-          className="size-10 rounded-full border-[3px]"
-          style={{ borderColor: 'rgba(0,240,255,0.2)', borderTopColor: '#00f0ff' }}
+          className="size-11 rounded-full border-[3px] border-cyan-300/20 border-t-cyan-300"
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
         />
@@ -350,328 +667,49 @@ export function HomeView({
     )
   }
 
-  // ── Main content ──
+  const canPlay = Boolean(selectedServer && isOnline(selectedServer) && ['idle', 'error'].includes(state))
+
   return (
-    <div className="relative flex h-full flex-col">
-      {/* Header */}
-      <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-[0.25em]" style={{ color: 'rgba(0,240,255,0.7)' }}>
-            CyberCraft Network
-          </span>
-          {connectionStatus === 'connected' && (
-            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'rgba(0,255,136,0.15)', color: '#00ff88' }}>
-              <Wifi className="size-3" /> Jonli
+    <div className="relative flex h-full min-h-0">
+      <main className="min-w-0 flex-1 flex flex-col h-full">
+        <div className="mb-3 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 text-xs font-semibold">
+            <span className="flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-cyan-300">
+              {connectionStatus === 'connected' ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
+              {connectionStatus === 'connected' ? 'Onlayn' : connectionStatus === 'offline' ? 'Keshlangan' : 'Uzilgan'}
             </span>
-          )}
-          {connectionStatus === 'offline' && (
-            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'rgba(255,170,0,0.15)', color: '#ffaa00' }}>
-              <WifiOff className="size-3" /> Oflayn keshlangan
+            <span className="flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-300">
+              <Users className="size-3.5" />
+              {onlinePlayers.toLocaleString()} o‘yinchi
             </span>
-          )}
-          {connectionStatus === 'connecting' && (
-            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'rgba(0,240,255,0.15)', color: '#00f0ff' }}>
-              <WifiZero className="size-3" /> Ulanilmoqda...
+            <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[#b7c7dc]">
+              <Clock3 className="size-3.5" />
+              {onlineServers}/{displayServers.length} server
             </span>
-          )}
-          {connectionStatus === 'disconnected' && (
-            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]" style={{ background: 'rgba(255,68,68,0.15)', color: '#ff6666' }}>
-              <WifiOff className="size-3" /> Uzilgan
-            </span>
-          )}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-[#8ba0b8]">
+            <Sparkles className="size-3.5 text-cyan-300" />
+            Avto-sinxronlash
+          </div>
         </div>
 
-        <h1
-          className="glitch font-display text-3xl md:text-4xl"
-          data-text={`Xush kelibsiz, ${user?.username || "O'yinchi"}`}
-          style={{ fontWeight: 900 }}
-        >
-          <span style={{ color: '#ffffff' }}>Xush kelibsiz, </span>
-          <span style={{ color: '#00f0ff', textShadow: '0 0 16px rgba(0,240,255,0.7)' }}>
-            {user?.username || "O'yinchi"}
-          </span>
-        </h1>
-
-        <p className="text-sm" style={{ color: '#8888aa' }}>
-          {connectionStatus === 'offline'
-            ? "Oflayn rejim — keshlangan serverlar ko'rsatilmoqda."
-            : "Server tanlang va backend modlarini yuklab oling."}
-        </p>
-      </motion.header>
-
-      {/* Stat cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="mt-6 grid gap-3 sm:grid-cols-3"
-      >
-        <StatCard icon={Users} label="Onlayn o'yinchilar" value={onlinePlayers.toLocaleString()} color="#00f0ff" />
-        <StatCard
-          icon={Activity}
-          label="Server holati"
-          value={onlineServers ? 'Onlayn' : displayServers.length ? 'Oflayn' : 'Sinx'}
-          color={onlineServers > 0 ? '#00ff88' : '#ff0060'}
+        <ServerDetail
+          server={selectedServer}
+          canPlay={canPlay}
+          state={state}
+          onPlay={handlePlay}
+          onStop={() => window.electronAPI?.stopGame()}
         />
-        <StatCard icon={Clock} label="Serverlar" value={displayServers.length ? String(displayServers.length) : '0'} color="#ff0060" />
-      </motion.div>
+      </main>
 
-      {/* Server info card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mt-4 flex items-center gap-4 overflow-hidden rounded-2xl p-5"
-        style={{ background: '#12121a', border: '1px solid rgba(0,240,255,0.15)', boxShadow: '0 0 20px rgba(0,240,255,0.05)' }}
-      >
-        <span
-          className="flex size-12 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: 'rgba(0,240,255,0.12)', color: '#00f0ff' }}
-        >
-          {downloadState === 'completed' ? (
-            <CheckCircle2 className="size-6" />
-          ) : (
-            <FolderOpen className="size-6" />
-          )}
-        </span>
-        <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wider" style={{ color: 'rgba(0,240,255,0.7)' }}>
-            {connectionStatus === 'connected' ? 'Jonli holat' : connectionStatus === 'offline' ? 'Keshlangan server' : "So'nggi yangilanish"}
-          </span>
-          <h3 className="font-display text-lg" style={{ color: '#ffffff' }}>
-            {selectedServer?.name || 'CyberCraft Launcher'}
-          </h3>
-          <p className="text-sm" style={{ color: '#8888aa' }}>
-            {selectedServer
-              ? `${selectedServer.ip_address}:${selectedServer.port} · ${selectedServer.minecraft_version} · ${selectedServer.status}${selectedServer.current_players != null ? ` · ${selectedServer.current_players}/${selectedServer.max_players} o'yinchi` : ''}`
-              : 'Backend server profillari kutilmoqda.'}
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Controls */}
-      <div className="mt-auto flex flex-col gap-4 pt-6">
-        {/* Server selector */}
-        <div className="max-w-md">
-          <div className="flex flex-col gap-2 rounded-xl p-3" style={{ background: '#12121a', border: '1px solid #1a1a2e' }}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#00f0ff' }}>
-                <Server className="size-4" /> Server
-              </span>
-              <button
-                onClick={onRefreshServers}
-                disabled={loadingServers}
-                className="rounded-md p-1.5 transition-all disabled:opacity-60"
-                style={{ color: '#8888aa' }}
-                aria-label="Serverlarni yangilash"
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#00f0ff' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#8888aa' }}
-              >
-                <RefreshCw className={`size-4 ${loadingServers ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-            <select
-              value={selectedServer?.id || ''}
-              onChange={(event) => {
-                setSelectedServerId(event.target.value)
-                setDownloadState('idle')
-                setDownloadProgress(null)
-                setModsBaseDir('')
-              }}
-              className="rounded-lg px-3 py-2 text-sm outline-none"
-              style={{
-                background: '#0d0d14',
-                border: '1px solid #1a1a2e',
-                color: '#ffffff',
-              }}
-              onFocus={e => {
-                e.target.style.borderColor = '#00f0ff'
-                e.target.style.boxShadow = '0 0 0 2px rgba(0,240,255,0.1)'
-              }}
-              onBlur={e => {
-                e.target.style.borderColor = '#1a1a2e'
-                e.target.style.boxShadow = 'none'
-              }}
-            >
-              {displayServers.map((server) => (
-                <option key={server.id} value={server.id} style={{ background: '#12121a' }}>
-                  {server.name} — {server.minecraft_version} — {server.status}{server.current_players != null ? ` (${server.current_players})` : ''}
-                </option>
-              ))}
-              {!displayServers.length && <option value="" style={{ background: '#12121a' }}>Serverlar topilmadi</option>}
-            </select>
-            {connectionError && <p className="text-xs" style={{ color: '#ff4444' }}>{connectionError}</p>}
-          </div>
-        </div>
-
-        {/* Download progress bar */}
-        {downloadProgress && downloadState === 'downloading' && (
-          <div className="max-w-md">
-            <div className="flex flex-col gap-2 rounded-xl p-4" style={{ background: '#12121a', border: '1px solid rgba(0,240,255,0.2)' }}>
-              <div className="flex items-center justify-between text-xs" style={{ color: '#8888aa' }}>
-                <span>Yuklanmoqda: {downloadProgress.file}</span>
-                <span>{downloadProgress.current}/{downloadProgress.total}</span>
-              </div>
-              <div className="relative h-2 w-full overflow-hidden rounded-full" style={{ background: '#1a1a2e' }}>
-                <motion.div
-                  className="absolute left-0 top-0 h-full rounded-full"
-                  style={{
-                    background: 'linear-gradient(90deg, #00a8b3, #00f0ff)',
-                    boxShadow: '0 0 8px rgba(0,240,255,0.5)',
-                    width: `${downloadProgress.percent}%`,
-                  }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${downloadProgress.percent}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-              <span className="text-xs" style={{ color: '#00f0ff' }}>{downloadProgress.percent}%</span>
-            </div>
-          </div>
-        )}
-
-        {/* Download completed info */}
-        {downloadState === 'completed' && (
-          <div className="max-w-md">
-            <div
-              className="flex items-center gap-3 rounded-xl px-4 py-3"
-              style={{
-                background: 'rgba(0,255,136,0.08)',
-                border: '1px solid rgba(0,255,136,0.3)',
-              }}
-            >
-              <CheckCircle2 className="size-5 shrink-0" style={{ color: '#00ff88' }} />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold" style={{ color: '#00ff88' }}>
-                  Yuklash tugallandi
-                </span>
-                <span className="text-xs" style={{ color: '#8888aa' }}>
-                  {downloadedFiles} ta fayl muvaffaqiyatli yuklandi
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Download error */}
-        {downloadState === 'error' && (
-          <div className="max-w-md">
-            <div
-              className="flex items-center gap-3 rounded-xl px-4 py-3"
-              style={{
-                background: 'rgba(255,68,68,0.08)',
-                border: '1px solid rgba(255,68,68,0.3)',
-              }}
-            >
-              <AlertCircle className="size-5 shrink-0" style={{ color: '#ff4444' }} />
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold" style={{ color: '#ff4444' }}>
-                  Yuklashda xato
-                </span>
-                <span className="text-xs" style={{ color: '#ff8888' }}>
-                  {statusMessage}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action buttons */}
-        <div className="flex max-w-md gap-2">
-          {/* Download mods button */}
-          <motion.button
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            whileHover={canDownload ? { scale: 1.02 } : {}}
-            whileTap={canDownload ? { scale: 0.97 } : {}}
-            onClick={handleDownload}
-            disabled={!canDownload}
-            className="group relative flex h-16 flex-1 items-center justify-center gap-3 overflow-hidden rounded-2xl font-display text-lg tracking-wider disabled:cursor-default"
-            style={{
-              background: downloadState === 'completed'
-                ? 'linear-gradient(135deg, #00cc66, #00ff88)'
-                : downloadState === 'error'
-                ? 'linear-gradient(135deg, #cc2200, #ff4422)'
-                : 'linear-gradient(135deg, #00f0ff, #00a8b3)',
-              color: '#0a0a0f',
-              fontWeight: 900,
-              boxShadow: downloadState === 'completed'
-                ? '0 0 30px rgba(0,255,136,0.4)'
-                : '0 0 30px rgba(0,240,255,0.4)',
-            }}
-          >
-            {downloadState === 'downloading' ? (
-              <motion.span
-                className="size-6 rounded-full border-[3px]"
-                style={{ borderColor: 'rgba(0,0,0,0.3)', borderTopColor: 'rgba(0,0,0,0.8)' }}
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
-              />
-            ) : (
-              <Download className="size-6" />
-            )}
-            <span>
-              {downloadState === 'idle' && "MODLARNI YUKLASH"}
-              {downloadState === 'downloading' && 'YUKLANMOQDA'}
-              {downloadState === 'completed' && 'QAYTA YUKLASH'}
-              {downloadState === 'error' && 'QAYTA URUNISH'}
-            </span>
-          </motion.button>
-
-          {/* Play button (only after mods downloaded) */}
-          {(downloadState === 'completed' || modsBaseDir) && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={state === 'idle' ? { scale: 1.02 } : {}}
-              whileTap={state === 'idle' ? { scale: 0.97 } : {}}
-              onClick={state === 'running' ? () => window.electronAPI?.stopGame() : handlePlay}
-              disabled={!(state === 'idle' || state === 'running' || state === 'error') || !selectedServer}
-              className="group relative flex h-16 w-24 shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl font-display text-sm tracking-wider disabled:cursor-default"
-              style={{
-                background: state === 'error'
-                  ? 'linear-gradient(135deg, #cc2200, #ff4422)'
-                  : state === 'running'
-                  ? 'linear-gradient(135deg, #8800cc, #cc00ff)'
-                  : 'linear-gradient(135deg, #00f0ff, #00a8b3)',
-                color: '#0a0a0f',
-                fontWeight: 900,
-                boxShadow: '0 0 30px rgba(0,240,255,0.4)',
-              }}
-            >
-              {state === 'launching' ? (
-                <motion.span
-                  className="size-5 rounded-full border-[3px]"
-                  style={{ borderColor: 'rgba(0,0,0,0.3)', borderTopColor: 'rgba(0,0,0,0.8)' }}
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
-                />
-              ) : (
-                <Play className="size-5 fill-current" />
-              )}
-              <span>
-                {state === 'idle' ? "O'YNA" : state === 'launching' ? '...' : state === 'error' ? 'XATO' : "TO'XTAT"}
-              </span>
-            </motion.button>
-          )}
-        </div>
-
-        {/* Status message */}
-        <p className="h-4 text-xs" style={{ color: '#8888aa' }}>
-          {state === 'error'
-            ? <span style={{ color: '#ff4444' }}>Xato: {statusMessage}</span>
-            : state === 'running'
-            ? <span style={{ color: '#00ff88' }}>{statusMessage}</span>
-            : state !== 'idle'
-            ? statusMessage
-            : downloadState === 'completed'
-            ? 'Modlar yuklandi. O\'ynash tugmasini bosing.'
-            : selectedServer
-            ? `${selectedServer.name} serveri modlarini yuklab oling.`
-            : "Yuklash uchun server tanlang."}
-        </p>
-      </div>
+      <LaunchModal
+        state={state}
+        downloadState={downloadState}
+        progress={downloadProgress}
+        message={statusMessage}
+        onCancel={handleCancel}
+        onRetry={handlePlay}
+      />
     </div>
   )
 }

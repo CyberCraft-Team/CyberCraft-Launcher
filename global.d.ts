@@ -100,6 +100,7 @@ declare global {
   interface ElectronAPI {
     minimize: () => void
     close: () => void
+    openExternal: (url: string) => void
 
     loadSettings: () => Promise<{
       ram: number
