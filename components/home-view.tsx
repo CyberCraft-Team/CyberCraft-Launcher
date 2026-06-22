@@ -351,18 +351,33 @@ function ServerDetail({
     <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-4 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
       <div className="relative h-[120px] overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-[#102a3a] to-[#174b42] p-4 shrink-0">
         <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
-        <div className="relative z-10">
-          <span className="text-[10px] font-black uppercase tracking-[0.26em] text-cyan-300">Tanlangan server</span>
-          <div className="mt-1 flex items-start justify-between gap-4">
+        <div className="relative z-10 h-full flex flex-col justify-center">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-black text-white">{server.name}</h2>
-              <p className="mt-1 max-w-[500px] text-xs leading-5 text-[#c7d4e6] truncate">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-black text-white leading-none">{server.name}</h2>
+                <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black leading-none ${online ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' : 'border-red-300/35 bg-red-400/10 text-red-200'}`}>
+                  {statusLabel(server)}
+                </span>
+              </div>
+              <p className="mt-2.5 max-w-[500px] text-xs leading-5 text-[#c7d4e6] truncate">
                 {server.description || 'CyberCraft serveri uchun tayyorlangan modded o‘yin muhiti.'}
               </p>
             </div>
-            <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${online ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' : 'border-red-300/35 bg-red-400/10 text-red-200'}`}>
-              {statusLabel(server)}
-            </span>
+            <button
+              onClick={state === 'running' ? onStop : onPlay}
+              disabled={!canPlay && state !== 'running'}
+              className={`flex h-9 px-5 items-center justify-center gap-1.5 rounded-xl text-xs font-black tracking-wide transition disabled:cursor-not-allowed disabled:opacity-55 ${
+                state === 'running'
+                  ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                  : online
+                    ? 'bg-gradient-to-br from-cyan-300 to-emerald-300 text-[#071017] shadow-[0_0_15px_rgba(0,240,255,0.3)] hover:scale-[1.02] cursor-pointer'
+                    : 'bg-[#263246] text-[#8ba0b8]'
+              }`}
+            >
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-3.5 fill-current" />}
+              {state === 'running' ? 'TO‘XTATISH' : busy ? 'TAYYORLANMOQDA' : online ? 'O‘YNASH' : 'SERVER OFLAYN'}
+            </button>
           </div>
         </div>
       </div>
@@ -376,11 +391,7 @@ function ServerDetail({
       <div className="mt-4 flex-1 min-h-0">
         <div className="flex h-full flex-col rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4 min-h-0">
           <h3 className="text-sm font-black text-white shrink-0">Server tafsilotlari</h3>
-          <div className="mt-3 grid flex-1 grid-cols-4 gap-2 text-xs min-h-0">
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
-              <div className="text-[10px] text-[#8ba0b8]">Manzil</div>
-              <div className="mt-0.5 truncate font-semibold text-cyan-200">{server.ip_address}:{server.port}</div>
-            </div>
+          <div className="mt-3 grid flex-1 grid-cols-2 gap-2 text-xs min-h-0">
             <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
               <div className="text-[10px] text-[#8ba0b8]">Minecraft</div>
               <div className="mt-0.5 font-semibold text-white">{server.minecraft_version}</div>
@@ -389,32 +400,8 @@ function ServerDetail({
               <div className="text-[10px] text-[#8ba0b8]">Loader</div>
               <div className="mt-0.5 font-semibold text-white">{server.loader || 'NeoForge'}</div>
             </div>
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
-              <div className="text-[10px] text-[#8ba0b8]">Modpack</div>
-              <div className="mt-0.5 truncate font-semibold text-white">{server.modpack_name || 'CyberCore'}</div>
-            </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-4 shrink-0">
-        <button
-          onClick={state === 'running' ? onStop : onPlay}
-          disabled={!canPlay && state !== 'running'}
-          className={`flex h-11 min-w-[240px] items-center justify-center gap-2 rounded-xl text-sm font-black tracking-wide transition disabled:cursor-not-allowed disabled:opacity-55 ${
-            state === 'running'
-              ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.3)]'
-              : online
-                ? 'bg-gradient-to-br from-cyan-300 to-emerald-300 text-[#071017] shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:scale-[1.01]'
-                : 'bg-[#263246] text-[#8ba0b8]'
-          }`}
-        >
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4 fill-current" />}
-          {state === 'running' ? 'TO‘XTATISH' : busy ? 'TAYYORLANMOQDA' : online ? 'O‘YNASH' : 'SERVER OFLAYN'}
-        </button>
-        <p className="max-w-[340px] text-[10px] leading-4 text-[#8ba0b8]">
-          Bosilganda launcher modlarni avtomatik tekshiradi va kerak bo‘lsa yuklaydi.
-        </p>
       </div>
     </section>
   )
@@ -672,27 +659,6 @@ export function HomeView({
   return (
     <div className="relative flex h-full min-h-0">
       <main className="min-w-0 flex-1 flex flex-col h-full">
-        <div className="mb-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-2.5 py-1 text-cyan-300">
-              {connectionStatus === 'connected' ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
-              {connectionStatus === 'connected' ? 'Onlayn' : connectionStatus === 'offline' ? 'Keshlangan' : 'Uzilgan'}
-            </span>
-            <span className="flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-emerald-300">
-              <Users className="size-3.5" />
-              {onlinePlayers.toLocaleString()} o‘yinchi
-            </span>
-            <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[#b7c7dc]">
-              <Clock3 className="size-3.5" />
-              {onlineServers}/{displayServers.length} server
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[#8ba0b8]">
-            <Sparkles className="size-3.5 text-cyan-300" />
-            Avto-sinxronlash
-          </div>
-        </div>
-
         <ServerDetail
           server={selectedServer}
           canPlay={canPlay}
