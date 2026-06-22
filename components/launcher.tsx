@@ -184,11 +184,11 @@ export function Launcher() {
       </header>
 
       <div className="relative z-10 flex min-h-0 flex-1">
-        <nav
-          className="flex w-14 shrink-0 flex-col items-center rounded-3xl border border-white/8 bg-[#080d14]/95 py-3.5 px-1.5 h-fit max-h-[calc(100vh-80px)] my-auto ml-4 shadow-[0_16px_48px_rgba(0,0,0,0.4)] animate-fade-in"
-        >
-          {/* Server List - height adapts to number of servers dynamically */}
-          {user && (
+        {user && (
+          <nav
+            className="flex w-14 shrink-0 flex-col items-center rounded-3xl border border-white/8 bg-[#080d14]/95 py-3.5 px-1.5 h-fit max-h-[calc(100vh-80px)] my-auto ml-4 shadow-[0_16px_48px_rgba(0,0,0,0.4)] animate-fade-in"
+          >
+            {/* Server List - height adapts to number of servers dynamically */}
             <div className="flex w-full flex-col items-center gap-2.5 shrink-0 my-1">
               {servers.map((server) => {
                 const active = selectedServerId === server.id && tab === 'home'
@@ -232,34 +232,32 @@ export function Launcher() {
                 )
               })}
             </div>
-          )}
 
-          <span className="w-8 h-px bg-[#1f2a3d] my-1 shrink-0" />
+            <span className="w-8 h-px bg-[#1f2a3d] my-1 shrink-0" />
 
-          {/* Settings tab button */}
-          <button
-            onClick={() => setTab('settings')}
-            className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition ${
-              tab === 'settings'
-                ? 'border-cyan-300 bg-cyan-300/[0.08] text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
-                : 'border-[#263246] bg-[#0d1219]/90 text-[#8ba0b8] hover:border-cyan-300/40 hover:text-white'
-            }`}
-          >
-            {tab === 'settings' && (
-              <motion.span
-                layoutId="nav-active"
-                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                className="absolute inset-0 rounded-xl bg-cyan-300/[0.06]"
-              />
-            )}
-            <Settings className="relative size-5 shrink-0" />
-            <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
-              Sozlamalar
-            </div>
-          </button>
+            {/* Settings tab button */}
+            <button
+              onClick={() => setTab('settings')}
+              className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition ${
+                tab === 'settings'
+                  ? 'border-cyan-300 bg-cyan-300/[0.08] text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                  : 'border-[#263246] bg-[#0d1219]/90 text-[#8ba0b8] hover:border-cyan-300/40 hover:text-white'
+              }`}
+            >
+              {tab === 'settings' && (
+                <motion.span
+                  layoutId="nav-active"
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  className="absolute inset-0 rounded-xl bg-cyan-300/[0.06]"
+                />
+              )}
+              <Settings className="relative size-5 shrink-0" />
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
+                Sozlamalar
+              </div>
+            </button>
 
-          {/* Logout button (avatar completely removed) */}
-          {user && (
+            {/* Logout button (avatar completely removed) */}
             <button
               onClick={handleLogout}
               className="group relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-[#263246] bg-red-500/5 text-[#8ba0b8] transition hover:border-red-400/30 hover:text-red-400 mt-2"
@@ -269,8 +267,8 @@ export function Launcher() {
                 Chiqish
               </div>
             </button>
-          )}
-        </nav>
+          </nav>
+        )}
 
         <section className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
           <AnimatePresence mode="wait">

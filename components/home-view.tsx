@@ -143,19 +143,18 @@ function LoginPanel({
       className="relative w-full max-w-[420px] rounded-3xl border border-cyan-300/20 bg-[#101822]/95 p-8 shadow-[0_24px_80px_rgba(0,240,255,0.09)]"
     >
       <div className="mb-8">
-        <span className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300/75">CyberCraft Auth</span>
         <h2 className="mt-3 text-3xl font-black text-white">Launcherga kirish</h2>
         <p className="mt-2 text-sm text-[#8ba0b8]">CyberCraft akkauntingiz orqali davom eting.</p>
       </div>
 
       <div className="space-y-4">
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">Username yoki email</span>
+          <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">Username</span>
           <input
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
-            placeholder="cybercraft_player"
+            placeholder="Username"
             autoComplete="username"
           />
         </label>
@@ -198,55 +197,36 @@ function LoginPanel({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <button className="flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-sm font-semibold text-white transition hover:border-white/35">
-            <span className="flex size-5 items-center justify-center rounded bg-white text-[10px] font-black text-[#101822]">G</span>
+          <button className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08] cursor-pointer">
+            <svg className="size-4.5" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.67 1.39 7.56l3.89 3.02C6.21 7.42 8.87 5.04 12 5.04z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.48-1.12 2.74-2.38 3.58l3.7 2.87c2.16-1.99 3.41-4.91 3.41-8.6z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.28 14.78a6.99 6.99 0 0 1 0-4.13L1.39 7.63a11.962 11.962 0 0 0 0 8.73l3.89-3.02.002.44z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.7-2.87c-1.03.69-2.34 1.1-3.96 1.1-3.13 0-5.79-2.38-6.73-5.54l-3.89 3.02C3.37 20.33 7.35 23 12 23z"
+              />
+            </svg>
             Google
           </button>
-          <button className="flex h-11 items-center justify-center gap-2 rounded-xl border border-sky-300/30 bg-sky-400/10 text-sm font-semibold text-white transition hover:border-sky-300/55">
-            <RadioTower className="size-4 text-sky-300" />
+          <button className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sm font-semibold text-white transition hover:border-sky-500/35 hover:bg-sky-500/10 cursor-pointer">
+            <svg className="size-4.5 fill-current text-[#229ED9]" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-1.19.8-3.07 2.07-3.07 2.07-.47.32-.9.49-1.29.48-.43-.01-1.25-.24-1.86-.44-.75-.24-1.35-.37-1.3-.79.03-.22.33-.44.9-.66 3.52-1.53 5.87-2.54 7.05-3.03 3.35-1.39 4.05-1.63 4.5-1.64.1 0 .33.02.47.14.12.1.15.24.17.34.02.09.03.26.01.4z" />
+            </svg>
             Telegram
           </button>
         </div>
       </div>
     </motion.div>
-  )
-}
-
-function LoginHero() {
-  return (
-    <div className="relative flex min-h-[560px] flex-1 overflow-hidden rounded-[28px] border border-white/8 bg-[#0b1823]/60 p-10">
-      <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(90deg,#ffffff12_1px,transparent_1px),linear-gradient(#ffffff12_1px,transparent_1px)] [background-size:40px_40px]" />
-      <div className="absolute inset-y-16 left-8 w-1 rounded-full bg-gradient-to-b from-cyan-300 to-emerald-300 shadow-[0_0_26px_rgba(0,240,255,0.55)]" />
-      <div className="relative z-10 max-w-[470px] self-center pl-8">
-        <span className="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">CyberCraft Network</span>
-        <h1 className="mt-5 text-5xl font-black leading-tight text-white">
-          Futuristik Minecraft olamiga xush kelibsiz
-        </h1>
-        <p className="mt-5 max-w-[420px] text-base leading-7 text-[#b7c7dc]">
-          Serverlaringizga kiring, modlar avtomatik tekshirilsin va bir bosishda o‘ynashni boshlang.
-        </p>
-      </div>
-
-      <motion.div
-        aria-hidden
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute bottom-18 right-18 h-[430px] w-[260px]"
-      >
-        <div className="absolute bottom-0 left-8 h-8 w-44 rounded-full bg-cyan-300/20 blur-xl" />
-        <div className="absolute left-[80px] top-4 h-24 w-24 rounded-lg border border-cyan-200/30 bg-gradient-to-br from-emerald-300 to-cyan-700 shadow-[0_0_32px_rgba(0,240,255,0.3)]">
-          <div className="absolute inset-x-0 top-0 h-8 rounded-t-lg bg-[#142030]" />
-          <div className="absolute left-6 top-12 h-3 w-4 rounded-sm bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.8)]" />
-          <div className="absolute right-6 top-12 h-3 w-4 rounded-sm bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.8)]" />
-        </div>
-        <div className="absolute left-[62px] top-[132px] h-38 w-34 rounded-xl border border-cyan-300/25 bg-gradient-to-br from-[#151d2b] to-[#25344d]" />
-        <div className="absolute left-[104px] top-[168px] h-14 w-13 rounded-lg border border-cyan-300/45 bg-cyan-300/15 shadow-[0_0_18px_rgba(0,240,255,0.25)]" />
-        <div className="absolute left-[26px] top-[146px] h-36 w-11 rounded-lg border border-cyan-300/15 bg-gradient-to-b from-[#182235] to-[#293b56]" />
-        <div className="absolute right-[28px] top-[146px] h-36 w-11 rounded-lg border border-cyan-300/15 bg-gradient-to-b from-[#182235] to-[#293b56]" />
-        <div className="absolute left-[72px] top-[292px] h-26 w-13 rounded-lg border border-emerald-300/15 bg-gradient-to-b from-[#152033] to-[#22334d]" />
-        <div className="absolute right-[74px] top-[292px] h-26 w-13 rounded-lg border border-emerald-300/15 bg-gradient-to-b from-[#152033] to-[#22334d]" />
-      </motion.div>
-    </div>
   )
 }
 
@@ -633,11 +613,8 @@ export function HomeView({
 
   if (!user && !loadingSession) {
     return (
-      <div className="relative flex h-full gap-8">
-        <LoginHero />
-        <div className="flex w-[430px] items-center justify-center">
-          <LoginPanel onLogin={onLogin} error={connectionError} />
-        </div>
+      <div className="relative flex h-full items-center justify-center">
+        <LoginPanel onLogin={onLogin} error={connectionError} />
       </div>
     )
   }
