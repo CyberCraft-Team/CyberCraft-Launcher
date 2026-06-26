@@ -36,6 +36,7 @@ function saveCache() {
 }
 
 function cacheServers(servers) {
+  loadCache();
   const now = Date.now();
   for (const server of servers) {
     cache.servers[server.id] = { data: server, cached_at: now };
@@ -60,6 +61,7 @@ function hasValidCache(maxAgeMs) {
 }
 
 function cacheManifest(serverId, manifest) {
+  loadCache();
   cache.manifests[serverId] = { data: manifest, cached_at: Date.now() };
   saveCache();
 }
@@ -75,6 +77,7 @@ function getCachedManifest(serverId, maxAgeMs) {
 }
 
 function setSetting(key, value) {
+  loadCache();
   cache.settings[key] = value;
   saveCache();
 }
@@ -86,6 +89,7 @@ function getSetting(key, defaultValue) {
 
 function clearOldCache(maxAgeMs) {
   if (maxAgeMs === undefined) maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+  loadCache();
   const cutoff = Date.now() - maxAgeMs;
   for (const id of Object.keys(cache.servers)) {
     if (cache.servers[id].cached_at < cutoff) delete cache.servers[id];

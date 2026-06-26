@@ -1,5 +1,5 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
+const { exec } = require('child_process');
+const fs = require('fs').promises;
 const path = require('path');
 
 const JAVA_CANDIDATES = ['java', 'java.exe'];
@@ -17,6 +17,15 @@ const JAVA_HOME_CANDIDATES = (function() {
   }
   return candidates;
 })();
+
+async function exists(p) {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function parseJavaVersion(output) {
   const lines = output.split('\n');
@@ -45,31 +54,45 @@ function parseJavaVersion(output) {
 }
 
 function checkJavaExecutable(javaPath) {
-  try {
-    const output = execSync(`"${javaPath}" -version 2>&1`, {
-      encoding: 'utf-8',
-      timeout: 5000,
+  return new Promise((resolve) => {
+    exec(`"${javaPath}" -version`, { timeout: 5000 }, (error, stdout, stderr) => {
+      const output = (stdout || '') + (stderr || '');
+      if (error && !output) {
+        resolve(null);
+        return;
+      }
+      const { version, vendor } = parseJavaVersion(output);
+      resolve({ path: javaPath, version, vendor, isValid: version >= 8 });
     });
-    const { version, vendor } = parseJavaVersion(output);
-    return { path: javaPath, version, vendor, isValid: version >= 8 };
-  } catch {
-    return null;
-  }
+  });
 }
 
-function findJavaInDirectory(dir) {
+async function findJavaInDirectory(dir) {
   const results = [];
   try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    // 1. Check if the directory itself contains bin/java
+    const binDir = path.join(dir, 'bin');
+    if (await exists(binDir)) {
+      for (const candidate of JAVA_CANDIDATES) {
+        const javaPath = path.join(binDir, candidate);
+        if (await exists(javaPath)) {
+          const info = await checkJavaExecutable(javaPath);
+          if (info) results.push(info);
+        }
+      }
+    }
+
+    // 2. Check all subdirectories of dir (excluding bin directory itself)
+    const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      if (entry.isDirectory() && entry.name.toLowerCase() !== 'bin') {
         const subDir = path.join(dir, entry.name);
-        const binDir = path.join(subDir, 'bin');
-        if (fs.existsSync(binDir)) {
+        const subBinDir = path.join(subDir, 'bin');
+        if (await exists(subBinDir)) {
           for (const candidate of JAVA_CANDIDATES) {
-            const javaPath = path.join(binDir, candidate);
-            if (fs.existsSync(javaPath)) {
-              const info = checkJavaExecutable(javaPath);
+            const javaPath = path.join(subBinDir, candidate);
+            if (await exists(javaPath)) {
+              const info = await checkJavaExecutable(javaPath);
               if (info) results.push(info);
             }
           }
@@ -82,17 +105,17 @@ function findJavaInDirectory(dir) {
   return results;
 }
 
-function detectJava() {
+async function detectJava() {
   const results = [];
 
   for (const candidate of JAVA_CANDIDATES) {
-    const info = checkJavaExecutable(candidate);
+    const info = await checkJavaExecutable(candidate);
     if (info) results.push(info);
   }
 
   for (const javaHome of JAVA_HOME_CANDIDATES) {
-    if (javaHome && fs.existsSync(javaHome)) {
-      const found = findJavaInDirectory(javaHome);
+    if (javaHome && await exists(javaHome)) {
+      const found = await findJavaInDirectory(javaHome);
       results.push(...found);
     }
   }
@@ -109,9 +132,9 @@ function detectJava() {
     .sort((a, b) => b.version - a.version);
 }
 
-function getBestJava(preferVersion) {
+async function getBestJava(preferVersion) {
   if (preferVersion === undefined) preferVersion = 21;
-  const javas = detectJava();
+  const javas = await detectJava();
   if (javas.length === 0) return null;
 
   const preferred = javas.find(j => j.version === preferVersion);
@@ -125,8 +148,8 @@ function getBestJava(preferVersion) {
   return javas[0];
 }
 
-function validateJavaPath(javaPath) {
-  return checkJavaExecutable(javaPath);
+async function validateJavaPath(javaPath) {
+  return await checkJavaExecutable(javaPath);
 }
 
 module.exports = { detectJava, getBestJava, validateJavaPath };

@@ -404,13 +404,13 @@ ipcMain.handle('api:ws-token', async () => {
 })
 
 ipcMain.handle('api:detect-java', async () => {
-  const javas = detectJava()
-  const best = getBestJava(21)
+  const javas = await detectJava()
+  const best = await getBestJava(21)
   return { all: javas, best }
 })
 
 ipcMain.handle('api:validate-java', async (event, javaPath) => {
-  return validateJavaPath(javaPath)
+  return await validateJavaPath(javaPath)
 })
 
 ipcMain.handle('api:get-system-memory', async () => {
@@ -418,22 +418,94 @@ ipcMain.handle('api:get-system-memory', async () => {
 })
 
 async function copyModsAndResources(modsDir, gameDir) {
-  const fs = require('fs')
+  const fs = require('fs').promises
+  const { existsSync } = require('fs')
   const path = require('path')
+  const crypto = require('crypto')
   const subDirs = ['mods', 'resourcepacks', 'shaders']
+
+  const exists = async (p) => {
+    try {
+      await fs.access(p)
+      return true
+    } catch {
+      return false
+    }
+  }
 
   for (const subDir of subDirs) {
     const srcDir = path.join(modsDir, subDir)
     const destDir = path.join(gameDir, subDir)
 
-    if (fs.existsSync(srcDir)) {
-      fs.mkdirSync(destDir, { recursive: true })
-      const files = fs.readdirSync(srcDir)
-      for (const file of files) {
+    if (await exists(srcDir)) {
+      await fs.mkdir(destDir, { recursive: true })
+      
+      const srcFiles = await fs.readdir(srcDir)
+      const destFiles = await exists(destDir) ? await fs.readdir(destDir) : []
+
+      // 1. Delete client files that are no longer present in server synced files
+      for (const destFile of destFiles) {
+        const destFilePath = path.join(destDir, destFile)
+        try {
+          const stat = await fs.stat(destFilePath)
+          if (stat.isFile() && !srcFiles.includes(destFile)) {
+            console.log(`Deleting removed file: ${destFilePath}`)
+            await fs.unlink(destFilePath)
+          }
+        } catch (e) {
+          console.error(`Error deleting file ${destFilePath}:`, e)
+        }
+      }
+
+      // 2. Copy/overwrite files
+      for (const file of srcFiles) {
         const srcFile = path.join(srcDir, file)
         const destFile = path.join(destDir, file)
-        if (!fs.existsSync(destFile)) {
-          fs.copyFileSync(srcFile, destFile)
+        
+        try {
+          const srcStat = await fs.stat(srcFile)
+          if (!srcStat.isFile()) continue
+
+          let shouldCopy = false
+          if (!await exists(destFile)) {
+            shouldCopy = true
+          } else {
+            const destStat = await fs.stat(destFile)
+            if (srcStat.size !== destStat.size) {
+              shouldCopy = true
+            } else {
+              const srcBuffer = await fs.readFile(srcFile)
+              const destBuffer = await fs.readFile(destFile)
+              const srcHash = crypto.createHash('md5').update(srcBuffer).digest('hex')
+              const destHash = crypto.createHash('md5').update(destBuffer).digest('hex')
+              if (srcHash !== destHash) {
+                shouldCopy = true
+              }
+            }
+          }
+
+          if (shouldCopy) {
+            console.log(`Syncing file: ${destFile}`)
+            await fs.copyFile(srcFile, destFile)
+          }
+        } catch (e) {
+          console.error(`Error syncing file ${srcFile}:`, e)
+        }
+      }
+    } else {
+      if (await exists(destDir)) {
+        try {
+          const destFiles = await fs.readdir(destDir)
+          for (const destFile of destFiles) {
+            const destFilePath = path.join(destDir, destFile)
+            const stat = await fs.stat(destFilePath)
+            if (stat.isFile()) {
+              console.log(`Deleting removed file from empty server dir: ${destFilePath}`)
+              await fs.unlink(destFilePath)
+            }
+          }
+        } catch (e) {
+          console.error(`Error cleaning up destDir ${destDir}:`, e)
         }
       }
     }
@@ -441,11 +513,14 @@ async function copyModsAndResources(modsDir, gameDir) {
 }
 
 async function downloadAuthlibInjector(destPath) {
+  const fs = require('fs')
+  const fsPromises = fs.promises
+  
   if (fs.existsSync(destPath)) {
     return destPath
   }
 
-  fs.mkdirSync(path.dirname(destPath), { recursive: true })
+  await fsPromises.mkdir(path.dirname(destPath), { recursive: true })
 
   const url = 'https://github.com/yushijinhun/authlib-injector/releases/download/v1.2.7/authlib-injector-1.2.7.jar'
 
@@ -481,17 +556,20 @@ async function downloadAuthlibInjector(destPath) {
 }
 
 async function downloadFile(url, destPath) {
-  if (fs.existsSync(destPath)) {
+  const fs = require('fs').promises
+  const { existsSync } = require('fs')
+  
+  if (existsSync(destPath)) {
     return destPath
   }
-  fs.mkdirSync(path.dirname(destPath), { recursive: true })
+  await fs.mkdir(path.dirname(destPath), { recursive: true })
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`Failed to download: ${response.statusText} (${response.status})`)
   }
   const arrayBuffer = await response.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
-  fs.writeFileSync(destPath, buffer)
+  await fs.writeFile(destPath, buffer)
   return destPath
 }
 
@@ -523,7 +601,7 @@ ipcMain.handle('launch-game', async (event, options) => {
     }
 
     webContents.send('launch-status', { state: 'checking', progress: 25, message: 'Detecting Java runtime...' })
-    const javaInfo = getBestJava(21)
+    const javaInfo = await getBestJava(21)
     if (!javaInfo) {
       throw new Error('Java runtime not found. Please install Java 21 or later.')
     }
@@ -755,7 +833,16 @@ ipcMain.on('window-close', () => {
 })
 
 ipcMain.on('open-external', (event, url) => {
-  shell.openExternal(url)
+  try {
+    const parsedUrl = new URL(url)
+    if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+      shell.openExternal(url)
+    } else {
+      console.warn(`Blocked open-external request for unsafe protocol: ${url}`)
+    }
+  } catch (e) {
+    console.error(`Invalid URL in open-external: ${url}`, e)
+  }
 })
 
 function startLocalServer() {

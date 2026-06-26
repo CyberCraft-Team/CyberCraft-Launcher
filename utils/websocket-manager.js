@@ -125,8 +125,12 @@ class WebSocketManager {
 
   async connect(apiRequestFn) {
     this.apiRequestFn = apiRequestFn
-    if (!await this.getWsToken(apiRequestFn)) return
     this.shouldReconnect = true
+    if (!await this.getWsToken(apiRequestFn)) {
+      console.log('Failed to get WS token during connect, scheduling reconnect...')
+      this.scheduleReconnect()
+      return
+    }
     await this.connectToEndpoint('status')
   }
 
