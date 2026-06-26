@@ -84,6 +84,19 @@ export function Launcher() {
     }
   }
 
+  async function handleOAuthLogin(provider: 'google' | 'telegram') {
+    if (!window.electronAPI) return
+    setConnectionError('')
+    try {
+      const session = await window.electronAPI.startOauth(provider)
+      setUser(session.user)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Ijtimoiy tarmoq orqali kirish muvaffaqiyatsiz bo\'ldi'
+      setConnectionError(message)
+      throw error
+    }
+  }
+
   async function handleLogout() {
     await window.electronAPI?.logout()
     setUser(null)
@@ -290,6 +303,7 @@ export function Launcher() {
                   loadingServers={loadingServers}
                   connectionError={connectionError}
                   onLogin={handleLogin}
+                  onOAuthLogin={handleOAuthLogin}
                   onRefreshServers={refreshServers}
                 />
               )}

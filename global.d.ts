@@ -119,6 +119,7 @@ declare global {
 
     getSession: () => Promise<{ authenticated: boolean; user: LauncherUser | null; error?: string }>
     login: (credentials: { username: string; password: string }) => Promise<{ authenticated: boolean; user: LauncherUser }>
+    startOauth: (provider: 'google' | 'telegram') => Promise<{ authenticated: boolean; user: LauncherUser }>
     logout: () => Promise<boolean>
     listServers: () => Promise<LauncherServer[]>
     getManifest: (serverId: string) => Promise<LauncherManifest>

@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   getSession: () => ipcRenderer.invoke('api:get-session'),
   login: (credentials) => ipcRenderer.invoke('api:login', credentials),
+  startOauth: (provider) => ipcRenderer.invoke('api:start-oauth', provider),
   logout: () => ipcRenderer.invoke('api:logout'),
   listServers: () => ipcRenderer.invoke('api:list-servers'),
   getManifest: (serverId) => ipcRenderer.invoke('api:get-manifest', serverId),

@@ -19,6 +19,7 @@ let launcherSession = null
 let wsManager = null
 let activeGameProcess = null
 let quitWithoutKillingGame = false
+let oauthServer = null
 
 const totalMemGB = Math.floor(os.totalmem() / (1024 * 1024 * 1024))
 const defaultRam = Math.max(2, Math.min(4, Math.floor(totalMemGB / 3))) // Yana ham kamroq RAM beramiz
@@ -172,6 +173,129 @@ ipcMain.handle('api:login', async (event, credentials) => {
     console.error('Login failed:', error.message)
     throw error
   }
+})
+
+ipcMain.handle('api:start-oauth', async (event, provider) => {
+  return new Promise((resolve, reject) => {
+    if (oauthServer) {
+      try {
+        oauthServer.close()
+      } catch (e) {}
+      oauthServer = null
+    }
+
+    oauthServer = http.createServer(async (req, res) => {
+      const urlObj = new URL(req.url, `http://${req.headers.host}`)
+      if (urlObj.pathname === '/callback') {
+        const token = urlObj.searchParams.get('token')
+        const username = urlObj.searchParams.get('username')
+
+        if (token) {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+          res.end(`
+            <html>
+              <head>
+                <title>CyberCraft Auth</title>
+                <style>
+                  body {
+                    background-color: #0b1622;
+                    color: #ffffff;
+                    font-family: sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                  }
+                  .container {
+                    text-align: center;
+                    padding: 40px;
+                    border-radius: 20px;
+                    background-color: #101822;
+                    border: 1px solid #00f0ff;
+                    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+                  }
+                  h1 { color: #00f0ff; margin-bottom: 10px; }
+                  p { color: #8ba0b8; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <h1>Muvaffaqiyatli!</h1>
+                  <p>Launcherda muvaffaqiyatli tizimga kirdingiz.</p>
+                  <p>Ushbu oynani yopishingiz va launcherga qaytishingiz mumkin.</p>
+                </div>
+                <script>
+                  setTimeout(() => window.close(), 3000);
+                </script>
+              </body>
+            </html>
+          `)
+
+          try {
+            launcherSession = { token }
+            const me = await apiRequest('/auth/launcher/me/')
+            const fullSession = { token, user: me.user }
+            saveSession(fullSession)
+
+            const manager = ensureWebSocketManager()
+            if (manager) manager.connect(apiRequest)
+
+            resolve({ authenticated: true, user: me.user })
+          } catch (authError) {
+            console.error('Failed to finalize OAuth login:', authError)
+            launcherSession = null
+            reject(new Error('Tizimga kirish tafsilotlarini yuklashda xato: ' + authError.message))
+          }
+
+          setTimeout(() => {
+            if (oauthServer) {
+              oauthServer.close()
+              oauthServer = null
+            }
+          }, 1000)
+        } else {
+          res.writeHead(400)
+          res.end('Token missing')
+          reject(new Error('Auth token missing from callback'))
+        }
+      } else {
+        res.writeHead(404)
+        res.end('Not Found')
+      }
+    })
+
+    oauthServer.listen(0, '127.0.0.1', async () => {
+      const port = oauthServer.address().port
+      const callbackUrl = `http://localhost:${port}/callback`
+      
+      const apiBase = loadSettingsSync().apiBaseUrl || DEFAULT_SETTINGS.apiBaseUrl
+      let websiteUrl = 'https://cybercraft.uz'
+      
+      if (apiBase.includes('localhost:8000') || apiBase.includes('127.0.0.1:8000')) {
+        websiteUrl = 'http://localhost:3000'
+      } else {
+        try {
+          const url = new URL(apiBase)
+          if (url.hostname.startsWith('api.')) {
+            websiteUrl = `${url.protocol}//${url.hostname.substring(4)}`
+          } else {
+            websiteUrl = `${url.protocol}//${url.hostname}`
+          }
+        } catch (e) {
+          console.error('Failed to parse apiBaseUrl:', e)
+        }
+      }
+
+      const authUrl = `${websiteUrl}/login?callback=${encodeURIComponent(callbackUrl)}&provider=${provider}`
+      shell.openExternal(authUrl)
+    })
+
+    oauthServer.on('error', (err) => {
+      console.error('OAuth callback server error:', err)
+      reject(err)
+    })
+  })
 })
 
 ipcMain.handle('api:logout', async () => {
@@ -730,6 +854,10 @@ async function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null
     if (localServer) localServer.close()
+    if (oauthServer) {
+      try { oauthServer.close() } catch (e) {}
+      oauthServer = null
+    }
     if (wsManager) wsManager.disconnect()
     if (activeGameProcess && !quitWithoutKillingGame) { activeGameProcess.kill(); activeGameProcess = null }
   })
@@ -747,6 +875,10 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   if (wsManager) wsManager.disconnect()
+  if (oauthServer) {
+    try { oauthServer.close() } catch (e) {}
+    oauthServer = null
+  }
   if (activeGameProcess && !quitWithoutKillingGame) { activeGameProcess.kill(); activeGameProcess = null }
   closeCache()
 })

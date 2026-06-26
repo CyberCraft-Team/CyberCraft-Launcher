@@ -107,9 +107,11 @@ function metricNumber(value: number | undefined) {
 
 function LoginPanel({
   onLogin,
+  onOAuthLogin,
   error,
 }: {
   onLogin: (username: string, password: string) => Promise<void>
+  onOAuthLogin: (provider: 'google' | 'telegram') => Promise<void>
   error: string
 }) {
   const [username, setUsername] = useState('')
@@ -197,7 +199,21 @@ function LoginPanel({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <button className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08] cursor-pointer">
+          <button
+            onClick={async () => {
+              setBusy(true)
+              setLocalError('')
+              try {
+                await onOAuthLogin('google')
+              } catch (err) {
+                setLocalError(err instanceof Error ? err.message : 'Google orqali kirish muvaffaqiyatsiz tugadi')
+              } finally {
+                setBusy(false)
+              }
+            }}
+            disabled={busy}
+            className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08] cursor-pointer disabled:opacity-50"
+          >
             <svg className="size-4.5" viewBox="0 0 24 24">
               <path
                 fill="#EA4335"
@@ -218,7 +234,21 @@ function LoginPanel({
             </svg>
             Google
           </button>
-          <button className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sm font-semibold text-white transition hover:border-sky-500/35 hover:bg-sky-500/10 cursor-pointer">
+          <button
+            onClick={async () => {
+              setBusy(true)
+              setLocalError('')
+              try {
+                await onOAuthLogin('telegram')
+              } catch (err) {
+                setLocalError(err instanceof Error ? err.message : 'Telegram orqali kirish muvaffaqiyatsiz tugadi')
+              } finally {
+                setBusy(false)
+              }
+            }}
+            disabled={busy}
+            className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sm font-semibold text-white transition hover:border-sky-500/35 hover:bg-sky-500/10 cursor-pointer disabled:opacity-50"
+          >
             <svg className="size-4.5 fill-current text-[#229ED9]" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-1.19.8-3.07 2.07-3.07 2.07-.47.32-.9.49-1.29.48-.43-.01-1.25-.24-1.86-.44-.75-.24-1.35-.37-1.3-.79.03-.22.33-.44.9-.66 3.52-1.53 5.87-2.54 7.05-3.03 3.35-1.39 4.05-1.63 4.5-1.64.1 0 .33.02.47.14.12.1.15.24.17.34.02.09.03.26.01.4z" />
             </svg>
@@ -479,6 +509,7 @@ export function HomeView({
   loadingServers,
   connectionError,
   onLogin,
+  onOAuthLogin,
   onRefreshServers,
 }: {
   user: LauncherUser | null
@@ -489,6 +520,7 @@ export function HomeView({
   loadingServers: boolean
   connectionError: string
   onLogin: (username: string, password: string) => Promise<void>
+  onOAuthLogin: (provider: 'google' | 'telegram') => Promise<void>
   onRefreshServers: () => void
 }) {
   const [state, setState] = useState<PlayState>('idle')
@@ -614,7 +646,7 @@ export function HomeView({
   if (!user && !loadingSession) {
     return (
       <div className="relative flex h-full items-center justify-center">
-        <LoginPanel onLogin={onLogin} error={connectionError} />
+        <LoginPanel onLogin={onLogin} onOAuthLogin={onOAuthLogin} error={connectionError} />
       </div>
     )
   }
