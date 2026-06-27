@@ -37,6 +37,7 @@ declare global {
     is_managed?: boolean
     loader?: string
     loader_version?: string | null
+    ping?: number
   }
 
   interface LauncherManifest {
@@ -88,6 +89,9 @@ declare global {
     state: 'downloading' | 'completed' | 'error'
     percent?: number
     message?: string
+    transferredBytes?: number
+    totalBytes?: number
+    speedBps?: number
   }
 
   interface UpdateProgress {

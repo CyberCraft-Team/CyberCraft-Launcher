@@ -21,6 +21,7 @@ export function Launcher() {
   const [loadingSession, setLoadingSession] = useState(true)
   const [loadingServers, setLoadingServers] = useState(false)
   const [connectionError, setConnectionError] = useState('')
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'offline' | 'disconnected'>('disconnected')
 
   async function refreshServers() {
     if (!window.electronAPI || !user) return
@@ -54,6 +55,27 @@ export function Launcher() {
       }
     }
     bootstrap()
+
+    const api = window.electronAPI
+    if (!api) return
+
+    const unsubWsConnected = api.onWsConnected(() => setConnectionStatus('connected'))
+    const unsubWsDisconnected = api.onWsDisconnected(() => {
+      if (api.hasValidCache) {
+        api.hasValidCache().then((valid) => setConnectionStatus(valid ? 'offline' : 'disconnected'))
+      } else {
+        setConnectionStatus('disconnected')
+      }
+    })
+    const unsubWsStatus = api.onWsStatus((data) => {
+      setConnectionStatus('connected')
+    })
+
+    return () => {
+      unsubWsConnected()
+      unsubWsDisconnected()
+      unsubWsStatus()
+    }
   }, [])
 
   useEffect(() => {
@@ -134,8 +156,18 @@ export function Launcher() {
           </span>
 
           <span className="ml-2.5 hidden items-center gap-1.5 text-xs text-[#8ba0b8] sm:flex">
-            <span className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(34,255,145,0.9)]" />
-            {onlinePlayers.toLocaleString()} o'yinchi onlayn
+            <span className={`size-1.5 rounded-full ${
+              connectionStatus === 'connected' 
+                ? 'bg-emerald-300 shadow-[0_0_8px_rgba(34,255,145,0.9)] animate-pulse' 
+                : connectionStatus === 'offline' 
+                  ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
+                  : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9)] animate-pulse'
+            }`} />
+            {connectionStatus === 'connected' 
+              ? `${onlinePlayers.toLocaleString()} o'yinchi onlayn` 
+              : connectionStatus === 'offline' 
+                ? 'Oflayn (keshdan)' 
+                : 'Ulanish uzildi'}
           </span>
         </div>
 

@@ -105,6 +105,70 @@ function metricNumber(value: number | undefined) {
   return typeof value === 'number' ? value.toLocaleString() : '0'
 }
 
+function formatSpeed(speedBps: number | undefined) {
+  if (!speedBps || speedBps <= 0) return 'Ulanmoqda...'
+  const mb = speedBps / (1024 * 1024)
+  if (mb >= 0.1) return `${mb.toFixed(1)} MB/s`
+  const kb = speedBps / 1024
+  return `${kb.toFixed(0)} KB/s`
+}
+
+function formatEta(speedBps: number | undefined, transferredBytes: number | undefined, totalBytes: number | undefined) {
+  if (!speedBps || speedBps <= 0 || typeof transferredBytes !== 'number' || typeof totalBytes !== 'number') return '--:--'
+  const remainingBytes = totalBytes - transferredBytes
+  if (remainingBytes <= 0) return '00:00'
+  const remainingSec = Math.ceil(remainingBytes / speedBps)
+  if (remainingSec > 3600) {
+    const hours = Math.floor(remainingSec / 3600)
+    const mins = Math.floor((remainingSec % 3600) / 60)
+    return `${hours}s ${mins}m`
+  }
+  const mins = Math.floor(remainingSec / 60)
+  const secs = remainingSec % 60
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+function getServerStyles(server: LauncherServer) {
+  const type = (server.server_type || '').toLowerCase();
+  if (type.includes('survival')) {
+    return {
+      gradient: 'from-[#0f3d2e] to-[#111c24]',
+      glow: 'shadow-[0_0_24px_rgba(34,255,145,0.15)]',
+      border: 'border-emerald-500/20',
+      accent: '#22ff91',
+      accentGlow: 'rgba(34, 255, 145, 0.4)',
+      playBtn: 'from-emerald-400 to-teal-500 hover:shadow-[0_0_20px_rgba(34,255,145,0.4)] text-[#071017]'
+    };
+  } else if (type.includes('oneblock') || type.includes('sky')) {
+    return {
+      gradient: 'from-[#0e2c3d] to-[#0b1016]',
+      glow: 'shadow-[0_0_24px_rgba(0,240,255,0.15)]',
+      border: 'border-cyan-500/20',
+      accent: '#00f0ff',
+      accentGlow: 'rgba(0, 240, 255, 0.4)',
+      playBtn: 'from-cyan-300 to-sky-500 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] text-[#071017]'
+    };
+  } else if (type.includes('pvp') || type.includes('arena')) {
+    return {
+      gradient: 'from-[#3d1222] to-[#120a10]',
+      glow: 'shadow-[0_0_24px_rgba(255,0,96,0.15)]',
+      border: 'border-rose-500/20',
+      accent: '#ff0060',
+      accentGlow: 'rgba(255, 0, 96, 0.4)',
+      playBtn: 'from-rose-400 to-red-500 hover:shadow-[0_0_20px_rgba(255,0,96,0.4)] text-white'
+    };
+  } else {
+    return {
+      gradient: 'from-[#2e0e3d] to-[#0e0a12]',
+      glow: 'shadow-[0_0_24px_rgba(204,68,255,0.15)]',
+      border: 'border-fuchsia-500/20',
+      accent: '#cc44ff',
+      accentGlow: 'rgba(204, 68, 255, 0.4)',
+      playBtn: 'from-fuchsia-400 to-violet-500 hover:shadow-[0_0_20px_rgba(204,68,255,0.4)] text-white'
+    };
+  }
+}
+
 function LoginPanel({
   onLogin,
   onOAuthLogin,
@@ -311,14 +375,21 @@ function StatCard({
   label,
   value,
   accent,
+  index = 0,
 }: {
   icon: typeof Users
   label: string
   value: string
   accent: string
+  index?: number
 }) {
   return (
-    <div className="rounded-2xl border border-[#263246] bg-[#101822]/95 p-3">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.25, ease: 'easeOut' }}
+      className="rounded-2xl border border-[#263246] bg-[#101822]/95 p-3 hover:border-white/10 hover:bg-[#121c27] transition-all duration-300"
+    >
       <div className="flex items-center gap-2">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border" style={{ borderColor: `${accent}45`, background: `${accent}20` }}>
           <Icon className="size-4" style={{ color: accent }} />
@@ -328,7 +399,52 @@ function StatCard({
           <div className="text-[11px] font-medium text-[#8ba0b8]">{label}</div>
         </div>
       </div>
-    </div>
+    </motion.div>
+  )
+}
+
+function ServerDetailSkeleton() {
+  return (
+    <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-white/5 bg-[#101822]/50 p-4 animate-pulse">
+      {/* Hero Banner Skeleton */}
+      <div className="relative h-[130px] rounded-2xl bg-white/[0.02] border border-white/5 p-4 shrink-0 flex flex-col justify-center">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-3 flex-1">
+            <div className="h-7 bg-white/10 rounded-lg w-1/3" />
+            <div className="h-4 bg-white/5 rounded-lg w-2/3" />
+          </div>
+          <div className="h-11 bg-white/10 rounded-xl w-28" />
+        </div>
+      </div>
+
+      {/* Stat Cards Skeleton */}
+      <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl border border-[#263246]/50 bg-[#101822]/50 p-3 h-[58px] flex items-center gap-3">
+            <div className="size-8 rounded-xl bg-white/5" />
+            <div className="space-y-1.5 flex-1">
+              <div className="h-4 bg-white/10 rounded w-1/2" />
+              <div className="h-3 bg-white/5 rounded w-1/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Details Box Skeleton */}
+      <div className="mt-4 flex-1 min-h-0">
+        <div className="flex h-full flex-col rounded-2xl border border-[#263246]/50 bg-[#0d1219]/50 p-4 min-h-0">
+          <div className="h-4 bg-white/10 rounded w-1/4 shrink-0 mb-4" />
+          <div className="grid flex-1 grid-cols-2 gap-3 text-xs min-h-0">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-xl bg-white/[0.01] border border-white/5 p-3 flex flex-col justify-center space-y-2">
+                <div className="h-3 bg-white/5 rounded w-1/3" />
+                <div className="h-4 bg-white/10 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -346,27 +462,48 @@ function ServerDetail({
   onStop: () => void
 }) {
   if (!server) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-[#263246] bg-[#101822]/50 text-[#8ba0b8]">
-        Serverlar backenddan yuklanmoqda.
-      </div>
-    )
+    return <ServerDetailSkeleton />
   }
 
   const online = isOnline(server)
+  const styles = getServerStyles(server)
   const playerValue = `${metricNumber(server.current_players)}/${metricNumber(server.max_players)}`
   const busy = ['checking', 'syncing', 'launching'].includes(state)
 
+  const pingValue = online 
+    ? (server.ping && server.ping > 0 ? `${server.ping} ms` : '24 ms') 
+    : '--'
+
+  let pingAccent = '#ff4d6d'
+  if (online) {
+    const p = server.ping || 24
+    if (p < 50) pingAccent = '#22ff91'
+    else if (p < 150) pingAccent = '#ffaa00'
+    else pingAccent = '#ff4444'
+  }
+
   return (
     <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-4 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
-      <div className="relative h-[120px] overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br from-[#102a3a] to-[#174b42] p-4 shrink-0">
-        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
+      <div className={`relative h-[130px] overflow-hidden rounded-2xl border bg-gradient-to-br ${styles.gradient} ${styles.border} p-4 shrink-0 transition-all duration-300`}>
+        {server.background_image_url ? (
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-25"
+            style={{ backgroundImage: `url(${server.background_image_url})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
+        )}
         <div className="relative z-10 h-full flex flex-col justify-center">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-black text-white leading-none">{server.name}</h2>
-                <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black leading-none ${online ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' : 'border-red-300/35 bg-red-400/10 text-red-200'}`}>
+                <h2 className="text-2xl font-black text-white leading-none tracking-wide">{server.name}</h2>
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-black leading-none ${
+                  online 
+                    ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' 
+                    : 'border-red-300/35 bg-red-400/10 text-red-200'
+                }`}>
+                  {online && <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
                   {statusLabel(server)}
                 </span>
               </div>
@@ -377,11 +514,11 @@ function ServerDetail({
             <button
               onClick={state === 'running' ? onStop : onPlay}
               disabled={!canPlay && state !== 'running'}
-              className={`flex h-9 px-5 items-center justify-center gap-1.5 rounded-xl text-xs font-black tracking-wide transition disabled:cursor-not-allowed disabled:opacity-55 ${
+              className={`flex h-11 px-6 items-center justify-center gap-2 rounded-xl text-xs font-black tracking-widest transition-all duration-300 transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
                 state === 'running'
-                  ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                  ? 'bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse'
                   : online
-                    ? 'bg-gradient-to-br from-cyan-300 to-emerald-300 text-[#071017] shadow-[0_0_15px_rgba(0,240,255,0.3)] hover:scale-[1.02] cursor-pointer'
+                    ? `${styles.playBtn} ${styles.glow} hover:scale-[1.03]`
                     : 'bg-[#263246] text-[#8ba0b8]'
               }`}
             >
@@ -393,22 +530,44 @@ function ServerDetail({
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
-        <StatCard icon={Users} label="O‘yinchilar" value={playerValue} accent={online ? '#00f0ff' : '#ff4d6d'} />
-        <StatCard icon={Gauge} label="Ping" value={online ? '24 ms' : '--'} accent={online ? '#22ff91' : '#ff4d6d'} />
-        <StatCard icon={ShieldCheck} label="Status" value={online ? 'Jonli' : 'Tanaffus'} accent={online ? '#22ff91' : '#ff4d6d'} />
+        <StatCard icon={Users} label="O‘yinchilar" value={playerValue} accent={online ? styles.accent : '#ff4d6d'} index={0} />
+        <StatCard icon={Gauge} label="Ping" value={pingValue} accent={pingAccent} index={1} />
+        <StatCard icon={ShieldCheck} label="Status" value={online ? 'Jonli' : 'Tanaffus'} accent={online ? '#22ff91' : '#ff4d6d'} index={2} />
       </div>
 
       <div className="mt-4 flex-1 min-h-0">
         <div className="flex h-full flex-col rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4 min-h-0">
           <h3 className="text-sm font-black text-white shrink-0">Server tafsilotlari</h3>
-          <div className="mt-3 grid flex-1 grid-cols-2 gap-2 text-xs min-h-0">
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
-              <div className="text-[10px] text-[#8ba0b8]">Minecraft</div>
-              <div className="mt-0.5 font-semibold text-white">{server.minecraft_version}</div>
+          <div className="mt-3 grid flex-1 grid-cols-2 gap-3 text-xs min-h-0">
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition">
+              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Minecraft</div>
+              <div className="mt-1 font-semibold text-white">{server.minecraft_version}</div>
             </div>
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.03] p-2.5 min-h-0">
-              <div className="text-[10px] text-[#8ba0b8]">Loader</div>
-              <div className="mt-0.5 font-semibold text-white">{server.loader || 'NeoForge'}</div>
+            
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition">
+              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Loader</div>
+              <div className="mt-1 font-semibold text-white">{server.loader || 'NeoForge'} {server.loader_version ? `(${server.loader_version})` : ''}</div>
+            </div>
+
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition relative group">
+              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Server IP</div>
+              <div className="mt-1 font-mono font-semibold text-cyan-300 text-sm truncate flex items-center justify-between">
+                <span>{server.ip_address}</span>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(server.ip_address);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition size-5 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer ml-1"
+                  title="IP nusxalash"
+                >
+                  <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition">
+              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Modpack</div>
+              <div className="mt-1 font-semibold text-white">{server.modpack_name || 'CyberCore'} {server.modpack_version ? `(${server.modpack_version})` : ''}</div>
             </div>
           </div>
         </div>
@@ -577,8 +736,8 @@ export function HomeView({
       setDownloadState(progress.state === 'completed' ? 'completed' : 'downloading')
       setDownloadProgress({
         percent,
-        speed: progress.state === 'completed' ? 'Tayyor' : '8.4 MB/s',
-        eta: progress.state === 'completed' ? '00:00' : percent > 70 ? '00:18' : '00:42',
+        speed: progress.state === 'completed' ? 'Tayyor' : formatSpeed(progress.speedBps),
+        eta: progress.state === 'completed' ? '00:00' : formatEta(progress.speedBps, progress.transferredBytes, progress.totalBytes),
       })
     })
 

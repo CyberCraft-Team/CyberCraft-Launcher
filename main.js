@@ -312,8 +312,42 @@ ipcMain.handle('api:logout', async () => {
 ipcMain.handle('api:list-servers', async () => {
   try {
     const servers = await apiRequest('/launcher/servers/')
-    cacheServers(servers)
-    return servers
+    const net = require('net')
+    
+    const pingServer = (host, port, timeout = 2000) => {
+      return new Promise((resolve) => {
+        const start = Date.now()
+        const socket = new net.Socket()
+        socket.setTimeout(timeout)
+        socket.connect(port, host, () => {
+          const ping = Date.now() - start
+          socket.destroy()
+          resolve(ping)
+        })
+        socket.on('error', () => {
+          socket.destroy()
+          resolve(-1)
+        })
+        socket.on('timeout', () => {
+          socket.destroy()
+          resolve(-1)
+        })
+      })
+    }
+
+    const pingedServers = await Promise.all(
+      servers.map(async (server) => {
+        try {
+          const ping = await pingServer(server.ip_address, server.port || 25565, 2000)
+          return { ...server, ping }
+        } catch (e) {
+          return { ...server, ping: -1 }
+        }
+      })
+    )
+
+    cacheServers(pingedServers)
+    return pingedServers
   } catch (error) {
     const cached = getCachedServers()
     if (cached.length > 0) return cached
@@ -350,6 +384,11 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
     const downloaded = []
     const session = loadSession()
     const authHeaders = session?.token ? { Authorization: `Launcher ${session.token}` } : {}
+
+    const totalBytes = allFiles.reduce((acc, f) => acc + (f.size || 0), 0)
+    let transferredBytes = 0
+    const startTime = Date.now()
+
     for (let i = 0; i < allFiles.length; i++) {
       const file = allFiles[i]
       if (!file.url) {
@@ -359,12 +398,20 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
       const fileDir = path.join(baseDir, file.subDir)
       fs.mkdirSync(fileDir, { recursive: true })
       const filePath = path.join(fileDir, file.name)
+      
+      const percent = totalBytes > 0 ? Math.round((transferredBytes / totalBytes) * 100) : Math.round((i / allFiles.length) * 100)
+      const elapsedSec = (Date.now() - startTime) / 1000
+      const speedBps = elapsedSec > 0 ? transferredBytes / elapsedSec : 0
+
       webContents.send('download-progress', {
         current: i + 1,
         total: allFiles.length,
         file: file.name,
         state: 'downloading',
-        percent: Math.round(((i) / allFiles.length) * 100),
+        percent: percent,
+        transferredBytes,
+        totalBytes,
+        speedBps,
       })
       const response = await fetch(file.url, { headers: authHeaders })
       if (!response.ok) throw new Error(`Failed to download ${file.name}: ${response.statusText}`)
@@ -377,12 +424,21 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
       }
       fs.writeFileSync(filePath, buffer)
       downloaded.push({ name: file.name, type: file.type, path: filePath, size: file.size })
+      
+      transferredBytes += file.size || buffer.length
+      const nextPercent = totalBytes > 0 ? Math.round((transferredBytes / totalBytes) * 100) : Math.round(((i + 1) / allFiles.length) * 100)
+      const nextElapsedSec = (Date.now() - startTime) / 1000
+      const nextSpeedBps = nextElapsedSec > 0 ? transferredBytes / nextElapsedSec : 0
+
       webContents.send('download-progress', {
         current: i + 1,
         total: allFiles.length,
         file: file.name,
         state: 'completed',
-        percent: Math.round(((i + 1) / allFiles.length) * 100),
+        percent: nextPercent,
+        transferredBytes,
+        totalBytes,
+        speedBps: nextSpeedBps,
       })
     }
     return { success: true, files: downloaded, baseDir }
