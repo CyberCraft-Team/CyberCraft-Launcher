@@ -454,12 +454,16 @@ function ServerDetail({
   state,
   onPlay,
   onStop,
+  manifest,
+  loadingManifest,
 }: {
   server: LauncherServer | null
   canPlay: boolean
   state: PlayState
   onPlay: () => void
   onStop: () => void
+  manifest: LauncherManifest | null
+  loadingManifest: boolean
 }) {
   if (!server) {
     return <ServerDetailSkeleton />
@@ -482,14 +486,16 @@ function ServerDetail({
     else pingAccent = '#ff4444'
   }
 
+  const modsCount = manifest?.files?.mods?.length ?? 0
+  const resourcepacksCount = manifest?.files?.resourcepacks?.length ?? 0
+  const shadersCount = manifest?.files?.shaders?.length ?? 0
+  const manifestVersion = manifest?.version || server.modpack_version || 'v2.4'
+
   return (
     <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-5 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
       {/* 1. Header Area (StreamCraft style) */}
       <div className="flex items-start justify-between gap-4 shrink-0 pb-4 border-b border-[#263246]/50">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300/80 mb-1.5 block">
-            ← Bosh sahifa
-          </span>
           <div className="flex items-center gap-2">
             <h2 className="text-3xl font-black text-white leading-none tracking-wide">{server.name}</h2>
             <svg className="size-6 text-yellow-400 fill-current ml-1" viewBox="0 0 24 24">
@@ -525,10 +531,10 @@ function ServerDetail({
       {/* 2. Media/Features Gallery (4 column blocks like StreamCraft) */}
       <div className="mt-4 grid grid-cols-4 gap-3 shrink-0">
         {[
-          { title: 'Qurollar va Modlar', desc: 'Custom 3D modlar', color: 'from-violet-500/20 to-fuchsia-500/5', border: 'border-violet-500/15', icon: Sparkles },
-          { title: 'Custom Skinlar', desc: 'Unikal skin va plashlar', color: 'from-cyan-500/20 to-blue-500/5', border: 'border-cyan-500/15', icon: Gamepad2 },
-          { title: 'Iqtisodiyot', desc: 'Klanlar va savdo-sotiq', color: 'from-emerald-500/20 to-teal-500/5', border: 'border-emerald-500/15', icon: Users },
-          { title: 'Yangi Kvestlar', desc: 'Qiziqarli topshiriqlar', color: 'from-amber-500/20 to-orange-500/5', border: 'border-amber-500/15', icon: RadioTower },
+          { title: 'Modlar soni', desc: loadingManifest ? 'Yuklanmoqda...' : `${modsCount} ta mod faol`, color: 'from-violet-500/20 to-fuchsia-500/5', border: 'border-violet-500/15', icon: Sparkles },
+          { title: 'Resurs paketlar', desc: loadingManifest ? 'Yuklanmoqda...' : `${resourcepacksCount} ta resurs paket`, color: 'from-cyan-500/20 to-blue-500/5', border: 'border-cyan-500/15', icon: Gamepad2 },
+          { title: 'Shader paketlar', desc: loadingManifest ? 'Yuklanmoqda...' : `${shadersCount} ta shader faol`, color: 'from-emerald-500/20 to-teal-500/5', border: 'border-emerald-500/15', icon: Users },
+          { title: 'Yadro versiyasi', desc: loadingManifest ? 'Yuklanmoqda...' : `Versiya: ${manifestVersion}`, color: 'from-amber-500/20 to-orange-500/5', border: 'border-amber-500/15', icon: RadioTower },
         ].map((card, i) => {
           const Icon = card.icon;
           return (
@@ -730,6 +736,8 @@ export function HomeView({
     speed: 'Tekshirilmoqda',
     eta: '00:12',
   })
+  const [manifest, setManifest] = useState<LauncherManifest | null>(null)
+  const [loadingManifest, setLoadingManifest] = useState(false)
 
   useEffect(() => {
     if (servers.length > 0) setLiveServers(servers)
@@ -747,6 +755,25 @@ export function HomeView({
   useEffect(() => {
     if (!selectedServerId && displayServers[0]) setSelectedServerId(displayServers[0].id)
   }, [displayServers, selectedServerId])
+
+  useEffect(() => {
+    if (!selectedServer || !window.electronAPI) {
+      setManifest(null)
+      return
+    }
+    setLoadingManifest(true)
+    window.electronAPI.getManifest(selectedServer.id)
+      .then((m) => {
+        setManifest(m)
+      })
+      .catch((err) => {
+        console.error("Failed to load manifest:", err)
+        setManifest(null)
+      })
+      .finally(() => {
+        setLoadingManifest(false)
+      })
+  }, [selectedServer])
 
   useEffect(() => {
     const api = window.electronAPI
@@ -871,6 +898,8 @@ export function HomeView({
           state={state}
           onPlay={handlePlay}
           onStop={() => window.electronAPI?.stopGame()}
+          manifest={manifest}
+          loadingManifest={loadingManifest}
         />
       </main>
 
