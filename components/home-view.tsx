@@ -467,7 +467,7 @@ function ServerDetail({
 
   const online = isOnline(server)
   const styles = getServerStyles(server)
-  const playerValue = `${metricNumber(server.current_players)}/${metricNumber(server.max_players)}`
+  const playerValue = `${metricNumber(server.current_players)} / ${metricNumber(server.max_players)}`
   const busy = ['checking', 'syncing', 'launching'].includes(state)
 
   const pingValue = online 
@@ -483,92 +483,130 @@ function ServerDetail({
   }
 
   return (
-    <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-4 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
-      <div className={`relative h-[130px] overflow-hidden rounded-2xl border bg-gradient-to-br ${styles.gradient} ${styles.border} p-4 shrink-0 transition-all duration-300`}>
-        {server.background_image_url ? (
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-25"
-            style={{ backgroundImage: `url(${server.background_image_url})` }}
-          />
-        ) : (
-          <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
-        )}
-        <div className="relative z-10 h-full flex flex-col justify-center">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-black text-white leading-none tracking-wide">{server.name}</h2>
-                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-black leading-none ${
-                  online 
-                    ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' 
-                    : 'border-red-300/35 bg-red-400/10 text-red-200'
-                }`}>
-                  {online && <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
-                  {statusLabel(server)}
-                </span>
-              </div>
-              <p className="mt-2.5 max-w-[500px] text-xs leading-5 text-[#c7d4e6] truncate">
-                {server.description || 'CyberCraft serveri uchun tayyorlangan modded o‘yin muhiti.'}
-              </p>
-            </div>
-            <button
-              onClick={state === 'running' ? onStop : onPlay}
-              disabled={!canPlay && state !== 'running'}
-              className={`flex h-11 px-6 items-center justify-center gap-2 rounded-xl text-xs font-black tracking-widest transition-all duration-300 transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
-                state === 'running'
-                  ? 'bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse'
-                  : online
-                    ? `${styles.playBtn} ${styles.glow} hover:scale-[1.03]`
-                    : 'bg-[#263246] text-[#8ba0b8]'
-              }`}
-            >
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-3.5 fill-current" />}
-              {state === 'running' ? 'TO‘XTATISH' : busy ? 'TAYYORLANMOQDA' : online ? 'O‘YNASH' : 'SERVER OFLAYN'}
-            </button>
+    <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-5 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
+      {/* 1. Header Area (StreamCraft style) */}
+      <div className="flex items-start justify-between gap-4 shrink-0 pb-4 border-b border-[#263246]/50">
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300/80 mb-1.5 block">
+            ← Bosh sahifa
+          </span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-3xl font-black text-white leading-none tracking-wide">{server.name}</h2>
+            <svg className="size-6 text-yellow-400 fill-current ml-1" viewBox="0 0 24 24">
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+            </svg>
           </div>
+          <p className="mt-2 text-xs leading-5 text-[#8ba0b8] max-w-[500px]">
+            {server.description || 'CyberCraft serveri uchun tayyorlangan modded o‘yin muhiti.'}
+          </p>
+        </div>
+        
+        <div className="flex flex-col items-center shrink-0">
+          <button
+            onClick={state === 'running' ? onStop : onPlay}
+            disabled={!canPlay && state !== 'running'}
+            className={`flex h-12 px-8 items-center justify-center gap-2.5 rounded-xl text-xs font-black tracking-widest transition-all duration-300 transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+              state === 'running'
+                ? 'bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse'
+                : online
+                  ? `bg-gradient-to-br ${styles.playBtn} ${styles.glow} hover:scale-[1.03] cursor-pointer`
+                  : 'bg-[#263246] text-[#8ba0b8]'
+            }`}
+          >
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-3.5 fill-current" />}
+            {state === 'running' ? 'TO‘XTATISH' : busy ? 'TAYYORLANMOQDA' : online ? 'O‘YNASH' : 'SERVER OFLAYN'}
+          </button>
+          <span className="text-[10px] font-bold text-[#8ba0b8] mt-2 hover:text-cyan-300 hover:underline cursor-pointer transition">
+            Sozlamalarni sozlash
+          </span>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
-        <StatCard icon={Users} label="O‘yinchilar" value={playerValue} accent={online ? styles.accent : '#ff4d6d'} index={0} />
-        <StatCard icon={Gauge} label="Ping" value={pingValue} accent={pingAccent} index={1} />
-        <StatCard icon={ShieldCheck} label="Status" value={online ? 'Jonli' : 'Tanaffus'} accent={online ? '#22ff91' : '#ff4d6d'} index={2} />
-      </div>
-
-      <div className="mt-4 flex-1 min-h-0">
-        <div className="flex h-full flex-col rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4 min-h-0">
-          <h3 className="text-sm font-black text-white shrink-0">Server tafsilotlari</h3>
-          <div className="mt-3 grid flex-1 grid-cols-2 gap-3 text-xs min-h-0">
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition">
-              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Minecraft</div>
-              <div className="mt-1 font-semibold text-white">{server.minecraft_version}</div>
-            </div>
-            
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition">
-              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Loader</div>
-              <div className="mt-1 font-semibold text-white">{server.loader || 'NeoForge'} {server.loader_version ? `(${server.loader_version})` : ''}</div>
-            </div>
-
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition relative group">
-              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Server IP</div>
-              <div className="mt-1 font-mono font-semibold text-cyan-300 text-sm truncate flex items-center justify-between">
-                <span>{server.ip_address}</span>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(server.ip_address);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition size-5 flex items-center justify-center rounded bg-white/10 hover:bg-white/20 text-white cursor-pointer ml-1"
-                  title="IP nusxalash"
-                >
-                  <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-                </button>
+      {/* 2. Media/Features Gallery (4 column blocks like StreamCraft) */}
+      <div className="mt-4 grid grid-cols-4 gap-3 shrink-0">
+        {[
+          { title: 'Qurollar va Modlar', desc: 'Custom 3D modlar', color: 'from-violet-500/20 to-fuchsia-500/5', border: 'border-violet-500/15', icon: Sparkles },
+          { title: 'Custom Skinlar', desc: 'Unikal skin va plashlar', color: 'from-cyan-500/20 to-blue-500/5', border: 'border-cyan-500/15', icon: Gamepad2 },
+          { title: 'Iqtisodiyot', desc: 'Klanlar va savdo-sotiq', color: 'from-emerald-500/20 to-teal-500/5', border: 'border-emerald-500/15', icon: Users },
+          { title: 'Yangi Kvestlar', desc: 'Qiziqarli topshiriqlar', color: 'from-amber-500/20 to-orange-500/5', border: 'border-amber-500/15', icon: RadioTower },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <div 
+              key={i}
+              className={`relative h-[95px] rounded-2xl border ${card.border} bg-gradient-to-br ${card.color} p-3 flex flex-col justify-between group hover:border-white/10 hover:shadow-lg transition-all duration-300`}
+            >
+              <span className="flex size-7 items-center justify-center rounded-lg bg-white/5 border border-white/5 group-hover:scale-110 transition duration-300">
+                <Icon className="size-4 text-white" />
+              </span>
+              <div>
+                <span className="block text-[11px] font-black text-white">{card.title}</span>
+                <span className="block text-[9px] text-[#8ba0b8] mt-0.5">{card.desc}</span>
               </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div className="flex flex-col justify-center rounded-xl bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.04] transition">
-              <div className="text-[10px] text-[#8ba0b8] font-bold uppercase tracking-wider">Modpack</div>
-              <div className="mt-1 font-semibold text-white">{server.modpack_name || 'CyberCore'} {server.modpack_version ? `(${server.modpack_version})` : ''}</div>
-            </div>
+      {/* 3. Stat Panels (2 columns large cards like StreamCraft) */}
+      <div className="mt-4 grid grid-cols-2 gap-3 shrink-0">
+        <div className="rounded-2xl border border-white/5 bg-[#0d1219]/40 p-4 flex flex-col items-center justify-center hover:bg-[#0d1219]/60 transition duration-300">
+          <span className="text-3xl font-black text-cyan-300 tracking-wide text-glow">{playerValue}</span>
+          <span className="text-xs font-semibold text-[#8ba0b8] mt-1.5">O'yinchilar onlayn</span>
+        </div>
+
+        <div className="rounded-2xl border border-white/5 bg-[#0d1219]/40 p-4 flex flex-col items-center justify-center hover:bg-[#0d1219]/60 transition duration-300">
+          <span className="text-3xl font-black text-emerald-400 tracking-wide text-glow">{pingValue}</span>
+          <span className="text-xs font-semibold text-[#8ba0b8] mt-1.5">Aloqa pingi (kechikish)</span>
+        </div>
+      </div>
+
+      {/* 4. Modpack Badge bar */}
+      <div className="mt-4 rounded-xl border border-white/5 bg-[#0d1219]/60 px-4 py-2.5 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="size-2 rounded-full bg-cyan-300 animate-pulse" />
+          <span className="text-xs font-black text-white uppercase tracking-wider">Modpack</span>
+        </div>
+        <span className="text-xs font-mono font-semibold text-cyan-300 bg-cyan-300/10 border border-cyan-300/20 px-2.5 py-0.5 rounded-full">
+          {server.modpack_name || 'CyberCore'} ({server.modpack_version || 'v2.4'})
+        </span>
+      </div>
+
+      {/* 5. Bottom 3-column detailed specs (scrollable) */}
+      <div className="mt-4 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-[#263246]/60 bg-[#0d1219]/40 p-3.5 hover:border-white/5 transition-all">
+            <h4 className="text-[11px] font-black text-white uppercase tracking-wider mb-2">Dunyo haqida</h4>
+            <p className="text-[10px] leading-4 text-[#8ba0b8]">
+              O'yin turi: <strong className="text-white">{server.server_type || 'Survival'}</strong><br/>
+              Minecraft versiyasi: <strong className="text-white">{server.minecraft_version}</strong><br/>
+              Yadro loaderi: <strong className="text-white">{server.loader || 'Forge'}</strong>
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#263246]/60 bg-[#0d1219]/40 p-3.5 hover:border-white/5 transition-all relative group">
+            <h4 className="text-[11px] font-black text-white uppercase tracking-wider mb-2">Tizim manzili</h4>
+            <p className="text-[10px] leading-4 text-[#8ba0b8]">
+              IP-manzil: <strong className="text-cyan-300 font-mono">{server.ip_address}</strong><br/>
+              Port raqami: <strong className="text-white font-mono">{server.port}</strong><br/>
+              Holati: <strong className={online ? "text-emerald-400" : "text-red-400"}>{online ? 'Onlayn' : 'Oflayn'}</strong>
+            </p>
+            <button 
+              onClick={() => navigator.clipboard.writeText(server.ip_address)}
+              className="absolute right-2.5 bottom-2.5 size-6 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white cursor-pointer transition opacity-0 group-hover:opacity-100"
+              title="IP nusxalash"
+            >
+              <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-[#263246]/60 bg-[#0d1219]/40 p-3.5 hover:border-white/5 transition-all">
+            <h4 className="text-[11px] font-black text-white uppercase tracking-wider mb-2">Kirish rejimi</h4>
+            <p className="text-[10px] leading-4 text-[#8ba0b8]">
+              Oq ro'yxat (Whitelist): <strong className="text-white">{server.whitelist_enabled ? 'Ha' : "Yo'q"}</strong><br/>
+              Boshqariladigan (Managed): <strong className="text-white">{server.is_managed ? 'Ha' : "Yo'q"}</strong><br/>
+              Launcher himoyasi: <strong className="text-emerald-400 font-semibold">Faol 🛡️</strong>
+            </p>
           </div>
         </div>
       </div>
