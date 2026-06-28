@@ -2,8 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
 
-function createGameDirectory(manifest) {
-  const gameDir = path.join(app.getPath('userData'), 'CyberCraft', 'game', manifest.id || 'default');
+function createGameDirectory(manifest, customBasePath) {
+  const gameDir = path.join(customBasePath || path.join(app.getPath('userData'), 'CyberCraft', 'game'), manifest.id || 'default');
   const versionDir = path.join(gameDir, 'versions', manifest.id || 'default');
 
   fs.mkdirSync(versionDir, { recursive: true });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
@@ -32,6 +32,13 @@ const DEFAULT_SETTINGS = {
   apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
 }
 
+function getDefaultPaths() {
+  return {
+    gamePath: path.join(app.getPath('userData'), 'CyberCraft', 'game'),
+    modsPath: path.join(app.getPath('userData'), 'CyberCraft', 'servers'),
+  }
+}
+
 function getSettingsPath() {
   const dir = path.join(app.getPath('userData'), 'CyberCraft')
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -43,15 +50,16 @@ ipcMain.handle('load-settings', () => {
 })
 
 function loadSettingsSync() {
+  const defaults = { ...DEFAULT_SETTINGS, ...getDefaultPaths() }
   try {
     const filePath = getSettingsPath()
     if (fs.existsSync(filePath)) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(filePath, 'utf-8')) }
+      return { ...defaults, ...JSON.parse(fs.readFileSync(filePath, 'utf-8')) }
     }
   } catch (error) {
     console.error('Failed to load settings:', error)
   }
-  return DEFAULT_SETTINGS
+  return defaults
 }
 
 ipcMain.handle('save-settings', async (event, settings) => {
@@ -375,7 +383,8 @@ ipcMain.handle('download-server-files', async (event, serverId) => {
   const webContents = event.sender
   try {
     const manifest = await apiRequest(`/launcher/servers/${encodeURIComponent(serverId)}/manifest/`)
-    const baseDir = path.join(app.getPath('userData'), 'CyberCraft', 'servers', serverId)
+    const settings = loadSettingsSync()
+    const baseDir = path.join(settings.modsPath || path.join(app.getPath('userData'), 'CyberCraft', 'servers'), serverId)
     const allFiles = [
       ...manifest.files.mods.map(f => ({ ...f, type: 'mod', subDir: 'mods' })),
       ...manifest.files.resourcepacks.map(f => ({ ...f, type: 'resourcepack', subDir: 'resourcepacks' })),
@@ -471,6 +480,15 @@ ipcMain.handle('api:validate-java', async (event, javaPath) => {
 
 ipcMain.handle('api:get-system-memory', async () => {
   return Math.floor(os.totalmem() / (1024 * 1024 * 1024))
+})
+
+ipcMain.handle('select-directory', async (event, defaultPath) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: defaultPath || app.getPath('desktop'),
+  })
+  if (result.canceled) return null
+  return result.filePaths[0]
 })
 
 async function copyModsAndResources(modsDir, gameDir) {
@@ -670,7 +688,7 @@ ipcMain.handle('launch-game', async (event, options) => {
 
     const { createGameDirectory } = require('./utils/game-launcher')
 
-    const gameDir = await createGameDirectory(manifest || { minecraft: 'latest', id: server?.id || 'default' })
+    const gameDir = await createGameDirectory(manifest || { minecraft: 'latest', id: server?.id || 'default' }, settings.gamePath)
 
     if (modsDir) {
       webContents.send('launch-status', { state: 'syncing', progress: 50, message: 'Installing mods and resources...' })
@@ -727,6 +745,9 @@ ipcMain.handle('launch-game', async (event, options) => {
         max: `${ram}G`,
         min: `${ram}G`
       },
+      windowSize: settings.fullscreen ? { fullscreen: true } : undefined,
+      fullscreen: settings.fullscreen ? true : false,
+      customLaunchArgs: settings.fullscreen ? ['--fullscreen'] : [],
       javaPath: (function () {
         let p = javaInfo.path;
         if (process.platform === 'win32') {

@@ -83,10 +83,12 @@ function PathRow({
   label,
   value,
   action = 'Tanlash',
+  onClick,
 }: {
   label: string
   value: string
   action?: string
+  onClick?: () => void
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
@@ -95,7 +97,10 @@ function PathRow({
         <div className="text-sm font-bold text-white">{label}</div>
         <div className="mt-1 truncate font-mono text-xs text-[#8ba0b8]">{value}</div>
       </div>
-      <button className="rounded-xl border border-[#2b3950] px-3 py-2 text-xs font-bold text-[#dfeaff] transition hover:border-cyan-300/40">
+      <button 
+        onClick={onClick}
+        className="rounded-xl border border-[#2b3950] px-3 py-2 text-xs font-bold text-[#dfeaff] transition hover:border-cyan-300/40 cursor-pointer"
+      >
         {action}
       </button>
     </div>
@@ -109,6 +114,8 @@ export function SettingsView() {
   const [fullscreen, setFullscreen] = useState(false)
   const [autoClose, setAutoClose] = useState(true)
   const [apiBaseUrl, setApiBaseUrl] = useState('http://127.0.0.1:8000/api/v1')
+  const [gamePath, setGamePath] = useState('')
+  const [modsPath, setModsPath] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [maxRam, setMaxRam] = useState(MAX_RAM)
@@ -131,6 +138,8 @@ export function SettingsView() {
         setOptimize(settings.optimize)
         setFullscreen(settings.fullscreen)
         setApiBaseUrl(settings.apiBaseUrl || 'http://127.0.0.1:8000/api/v1')
+        setGamePath(settings.gamePath || '')
+        setModsPath(settings.modsPath || '')
       }
     })
 
@@ -148,11 +157,23 @@ export function SettingsView() {
     }
   }
 
+  async function handleSelectGamePath() {
+    if (!window.electronAPI?.selectDirectory) return
+    const path = await window.electronAPI.selectDirectory(gamePath)
+    if (path) setGamePath(path)
+  }
+
+  async function handleSelectModsPath() {
+    if (!window.electronAPI?.selectDirectory) return
+    const path = await window.electronAPI.selectDirectory(modsPath)
+    if (path) setModsPath(path)
+  }
+
   async function handleSave() {
     if (!window.electronAPI) return
 
     setSaving(true)
-    const success = await window.electronAPI.saveSettings({ ram, args, optimize, fullscreen, apiBaseUrl })
+    const success = await window.electronAPI.saveSettings({ ram, args, optimize, fullscreen, apiBaseUrl, gamePath, modsPath })
     setSaving(false)
     if (success) {
       setSaved(true)
@@ -165,7 +186,6 @@ export function SettingsView() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-        <span className="text-xs font-black uppercase tracking-[0.26em] text-cyan-300/75">CyberCraft Launcher</span>
         <div className="mt-2 flex items-end justify-between gap-4">
           <div>
             <h1 className="text-4xl font-black text-white">
@@ -187,117 +207,91 @@ export function SettingsView() {
         </div>
       </motion.header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_380px] gap-5 overflow-hidden">
-        <div className="min-h-0 overflow-y-auto pr-1 scrollbar-thin">
-          <div className="grid gap-5">
-            <SettingsCard icon={MemoryStick} title="RAM ajratish" description="Minecraft jarayoni uchun ajratiladigan xotira hajmi.">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#8ba0b8]">Launcher tavsiyasi: 6-8 GB</span>
-                <span className="font-mono text-2xl font-black text-cyan-300 text-glow">{ram} GB</span>
-              </div>
-              <div className="relative mt-5">
-                <div className="h-3 rounded-full bg-[#1c2738]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_14px_rgba(0,240,255,0.45)]"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <input
-                  type="range"
-                  min={MIN_RAM}
-                  max={maxRam}
-                  value={ram}
-                  onChange={(event) => setRam(Number(event.target.value))}
-                  className="absolute inset-x-0 top-0 h-3 w-full cursor-pointer opacity-0"
-                  aria-label="RAM hajmi"
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-thin mt-2">
+        <div className="max-w-[700px] mx-auto space-y-5 pb-6">
+          <SettingsCard icon={MemoryStick} title="RAM ajratish" description="Minecraft jarayoni uchun ajratiladigan xotira hajmi.">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-[#8ba0b8]">Launcher tavsiyasi: 6-8 GB</span>
+              <span className="font-mono text-2xl font-black text-cyan-300 text-glow">{ram} GB</span>
+            </div>
+            <div className="relative mt-5">
+              <div className="h-3 rounded-full bg-[#1c2738]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_14px_rgba(0,240,255,0.45)]"
+                  style={{ width: `${pct}%` }}
                 />
-                <div className="mt-3 flex justify-between font-mono text-[11px] text-[#8ba0b8]">
-                  <span>{MIN_RAM} GB</span>
-                  <span>{maxRam} GB</span>
-                </div>
               </div>
-            </SettingsCard>
-
-            <SettingsCard icon={HardDrive} title="Game va mods path" description="Launcher o‘yin fayllari va mod cache joylashuvini shu yerda ko‘rsatadi.">
-              <div className="space-y-3">
-                <PathRow label="Game path" value="D:/Games/CyberCraft/.minecraft" />
-                <PathRow label="Mods cache" value="D:/Games/CyberCraft/mod-cache" />
-              </div>
-            </SettingsCard>
-
-            <SettingsCard icon={Terminal} title="Java argumentlari" description="Tajribali foydalanuvchilar uchun JVM flaglar.">
-              <textarea
-                value={args}
-                onChange={(event) => setArgs(event.target.value)}
-                rows={4}
-                spellCheck={false}
-                className="w-full resize-none rounded-2xl border border-[#263246] bg-[#0d1219] p-4 font-mono text-sm text-cyan-200 outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.12)]"
-                placeholder="-Xmx... custom JVM flags"
+              <input
+                type="range"
+                min={MIN_RAM}
+                max={maxRam}
+                value={ram}
+                onChange={(event) => setRam(Number(event.target.value))}
+                className="absolute inset-x-0 top-0 h-3 w-full cursor-pointer opacity-0"
+                aria-label="RAM hajmi"
               />
-              <button
-                onClick={() => setArgs(DEFAULT_ARGS)}
-                className="mt-3 flex items-center gap-2 text-xs font-bold text-[#8ba0b8] transition hover:text-cyan-300"
-              >
-                <RotateCcw className="size-3.5" />
-                Asl holatga qaytarish
-              </button>
-            </SettingsCard>
-          </div>
-        </div>
+              <div className="mt-3 flex justify-between font-mono text-[11px] text-[#8ba0b8]">
+                <span>{MIN_RAM} GB</span>
+                <span>{maxRam} GB</span>
+              </div>
+            </div>
+          </SettingsCard>
 
-        <aside className="min-h-0 overflow-y-auto pr-1 scrollbar-thin">
-          <div className="grid gap-4">
-            <SettingsCard icon={Cpu} title="Java path/version" description="Launcher topgan eng mos Java runtime.">
-              <div className="rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-300/10">
-                    <ShieldCheck className="size-5 text-emerald-300" />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-bold text-white">
-                      {javaInfo ? `Java ${javaInfo.version}` : detectingJava ? 'Aniqlanmoqda...' : 'Java aniqlanmagan'}
-                    </div>
-                    <div className="truncate text-xs text-[#8ba0b8]">{javaInfo?.vendor || 'Detect tugmasini bosing'}</div>
+          <SettingsCard icon={HardDrive} title="Game va mods path" description="Launcher o‘yin fayllari va mod cache joylashuvini shu yerda ko‘rsatadi.">
+            <div className="space-y-3">
+              <PathRow label="Game path" value={gamePath || 'Tanlanmagan'} onClick={handleSelectGamePath} />
+              <PathRow label="Mods cache" value={modsPath || 'Tanlanmagan'} onClick={handleSelectModsPath} />
+            </div>
+          </SettingsCard>
+
+          <SettingsCard icon={Cpu} title="Java path/version" description="Launcher topgan eng mos Java runtime.">
+            <div className="rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-300/10">
+                  <ShieldCheck className="size-5 text-emerald-300" />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-bold text-white">
+                    {javaInfo ? `Java ${javaInfo.version}` : detectingJava ? 'Aniqlanmoqda...' : 'Java aniqlanmagan'}
                   </div>
+                  <div className="truncate text-xs text-[#8ba0b8]">{javaInfo?.vendor || 'Detect tugmasini bosing'}</div>
                 </div>
-                <div className="mt-3 truncate font-mono text-[11px] text-[#8ba0b8]">{javaInfo?.path || 'Path mavjud emas'}</div>
-                <button
-                  onClick={detectJava}
-                  disabled={detectingJava}
-                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#2b3950] text-xs font-black text-[#dfeaff] transition hover:border-cyan-300/40 disabled:opacity-70"
-                >
-                  {detectingJava ? <Loader2 className="size-4 animate-spin" /> : <RefreshIcon />}
-                  Qayta aniqlash
-                </button>
               </div>
-            </SettingsCard>
+              <div className="mt-3 truncate font-mono text-[11px] text-[#8ba0b8]">{javaInfo?.path || 'Path mavjud emas'}</div>
+              <button
+                onClick={detectJava}
+                disabled={detectingJava}
+                className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#2b3950] text-xs font-black text-[#dfeaff] transition hover:border-cyan-300/40 disabled:opacity-70 cursor-pointer"
+              >
+                {detectingJava ? <Loader2 className="size-4 animate-spin" /> : <RefreshIcon />}
+                Qayta aniqlash
+              </button>
+            </div>
+          </SettingsCard>
 
-            <SettingsCard icon={ToggleRight} title="Launcher xatti-harakati" description="O‘yin ochilganda oynaning ishlashini boshqarish.">
-              <div className="space-y-3">
-                <ToggleRow
-                  checked={autoClose}
-                  onChange={setAutoClose}
-                  label="Launcher auto-close"
-                  desc="O‘yin ochilganda launcherni avtomatik yopish."
-                />
-                <ToggleRow
-                  checked={fullscreen}
-                  onChange={setFullscreen}
-                  label="To‘liq ekran"
-                  desc="Minecraft oynasini fullscreen rejimida ishga tushirish."
-                />
-                <ToggleRow
-                  checked={optimize}
-                  onChange={setOptimize}
-                  label="Java optimizatsiya"
-                  desc="Tavsiya etilgan GC flaglar bilan barqaror launch."
-                />
-              </div>
-            </SettingsCard>
-
-
-          </div>
-        </aside>
+          <SettingsCard icon={ToggleRight} title="Launcher xatti-harakati" description="O‘yin ochilganda oynaning ishlashini boshqarish.">
+            <div className="space-y-3">
+              <ToggleRow
+                checked={autoClose}
+                onChange={setAutoClose}
+                label="Launcher auto-close"
+                desc="O‘yin ochilganda launcherni avtomatik yopish."
+              />
+              <ToggleRow
+                checked={fullscreen}
+                onChange={setFullscreen}
+                label="To‘liq ekran"
+                desc="Minecraft oynasini fullscreen rejimida ishga tushirish."
+              />
+              <ToggleRow
+                checked={optimize}
+                onChange={setOptimize}
+                label="Java optimizatsiya"
+                desc="Tavsiya etilgan GC flaglar bilan barqaror launch."
+              />
+            </div>
+          </SettingsCard>
+        </div>
       </div>
     </div>
   )

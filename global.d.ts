@@ -112,6 +112,8 @@ declare global {
       optimize: boolean
       fullscreen: boolean
       apiBaseUrl: string
+      gamePath?: string
+      modsPath?: string
     }>
     saveSettings: (settings: {
       ram: number
@@ -119,7 +121,10 @@ declare global {
       optimize: boolean
       fullscreen: boolean
       apiBaseUrl?: string
+      gamePath?: string
+      modsPath?: string
     }) => Promise<boolean>
+    selectDirectory: (defaultPath?: string) => Promise<string | null>
 
     getSession: () => Promise<{ authenticated: boolean; user: LauncherUser | null; error?: string }>
     login: (credentials: { username: string; password: string }) => Promise<{ authenticated: boolean; user: LauncherUser }>

@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   loadSettings: () => ipcRenderer.invoke('load-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  selectDirectory: (defaultPath) => ipcRenderer.invoke('select-directory', defaultPath),
 
   getSession: () => ipcRenderer.invoke('api:get-session'),
   login: (credentials) => ipcRenderer.invoke('api:login', credentials),
