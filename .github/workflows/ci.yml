@@ -1,0 +1,32 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Non-blocking in P0. Five known errors live in dead .ts twins:
+      # utils/auto-updater.ts (4) and utils/cache-manager.ts, which imports
+      # better-sqlite3 -- a package that is not a dependency. P5 deletes
+      # these files and makes this step blocking.
+      #
+      # This runs as its own step because next.config.mjs sets
+      # typescript.ignoreBuildErrors, so the build alone proves nothing.
+      - name: Type check
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
