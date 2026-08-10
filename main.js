@@ -192,11 +192,49 @@ ipcMain.handle('api:start-oauth', async (event, provider) => {
       oauthServer = null
     }
 
+    // Single-use nonce tying this flow to its callback. Without it the
+    // loopback server accepts a token from any local process or any page the
+    // user happens to have open, and whoever wins the race owns the session.
+    const state = crypto.randomBytes(32).toString('hex')
+    let settled = false
+
+    const finish = (fn, arg) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeoutHandle)
+      setTimeout(() => {
+        if (oauthServer) {
+          oauthServer.close()
+          oauthServer = null
+        }
+      }, 1000)
+      fn(arg)
+    }
+
+    // The flow used to have no time limit: abandoning the browser left the
+    // port listening until the window closed.
+    const timeoutHandle = setTimeout(() => {
+      finish(reject, new Error('Tizimga kirish vaqti tugadi. Qaytadan urinib ko\'ring.'))
+    }, 5 * 60 * 1000)
+
     oauthServer = http.createServer(async (req, res) => {
       const urlObj = new URL(req.url, `http://${req.headers.host}`)
       if (urlObj.pathname === '/callback') {
         const token = urlObj.searchParams.get('token')
         const username = urlObj.searchParams.get('username')
+        const returnedState = urlObj.searchParams.get('state')
+
+        const stateOk =
+          typeof returnedState === 'string' &&
+          returnedState.length === state.length &&
+          crypto.timingSafeEqual(Buffer.from(returnedState), Buffer.from(state))
+
+        if (!stateOk) {
+          console.warn('OAuth callback rejected: state mismatch')
+          res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' })
+          res.end('Invalid state')
+          return
+        }
 
         if (token) {
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
@@ -249,23 +287,16 @@ ipcMain.handle('api:start-oauth', async (event, provider) => {
             const manager = ensureWebSocketManager()
             if (manager) manager.connect(apiRequest)
 
-            resolve({ authenticated: true, user: me.user })
+            finish(resolve, { authenticated: true, user: me.user })
           } catch (authError) {
             console.error('Failed to finalize OAuth login:', authError)
             launcherSession = null
-            reject(new Error('Tizimga kirish tafsilotlarini yuklashda xato: ' + authError.message))
+            finish(reject, new Error('Tizimga kirish tafsilotlarini yuklashda xato: ' + authError.message))
           }
-
-          setTimeout(() => {
-            if (oauthServer) {
-              oauthServer.close()
-              oauthServer = null
-            }
-          }, 1000)
         } else {
           res.writeHead(400)
           res.end('Token missing')
-          reject(new Error('Auth token missing from callback'))
+          finish(reject, new Error('Auth token missing from callback'))
         }
       } else {
         res.writeHead(404)
@@ -295,13 +326,13 @@ ipcMain.handle('api:start-oauth', async (event, provider) => {
         }
       }
 
-      const authUrl = `${websiteUrl}/login?callback=${encodeURIComponent(callbackUrl)}&provider=${provider}`
+      const authUrl = `${websiteUrl}/login?callback=${encodeURIComponent(callbackUrl)}&provider=${provider}&state=${state}`
       shell.openExternal(authUrl)
     })
 
     oauthServer.on('error', (err) => {
       console.error('OAuth callback server error:', err)
-      reject(err)
+      finish(reject, err)
     })
   })
 })
