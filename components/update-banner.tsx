@@ -97,47 +97,47 @@ export function UpdateBanner() {
         transition={{ duration: 0.25, ease: 'easeOut' }}
         className="pointer-events-none absolute left-1/2 top-[4.5rem] z-50 w-[min(420px,calc(100%-2rem))] -translate-x-1/2"
       >
-        <div className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-cyan-300/20 bg-[#101822]/95 p-3.5 shadow-[0_16px_48px_rgba(0,0,0,0.45)] backdrop-blur">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-lg border border-border bg-surface p-3.5 shadow-md backdrop-blur">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-3">
             {phase === 'downloaded' ? (
-              <Sparkles className="size-4.5 text-emerald-300" />
+              <Sparkles className="size-4.5 text-primary" />
             ) : phase === 'downloading' ? (
-              <DownloadCloud className="size-4.5 animate-pulse text-cyan-300" />
+              <DownloadCloud className="size-4.5 text-primary" />
             ) : (
-              <Download className="size-4.5 text-cyan-300" />
+              <Download className="size-4.5 text-primary" />
             )}
           </span>
 
           <div className="min-w-0 flex-1">
             {phase === 'available' && (
               <>
-                <div className="truncate text-sm font-bold text-white">
-                  Yangi versiya mavjud <span className="text-cyan-300">v{info.version}</span>
+                <div className="truncate text-sm font-bold text-foreground">
+                  Yangi versiya mavjud <span className="text-primary">v{info.version}</span>
                 </div>
-                <div className="mt-0.5 text-xs text-[#8ba0b8]">Yuklab olish uchun bosing</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">Yuklab olish uchun bosing</div>
               </>
             )}
             {phase === 'downloading' && (
               <>
-                <div className="truncate text-sm font-bold text-white">
-                  Yuklanmoqda <span className="text-cyan-300">v{info.version}</span>
+                <div className="truncate text-sm font-bold text-foreground">
+                  Yuklanmoqda <span className="text-primary">v{info.version}</span>
                 </div>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#1f2a3d]">
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_8px_rgba(0,240,255,0.6)]"
+                    className="h-full rounded-full bg-primary"
                     animate={{ width: `${percent}%` }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                   />
                 </div>
-                <div className="mt-1 text-[11px] text-[#8ba0b8]">{percent}%</div>
+                <div className="mt-1 font-mono text-[11px] text-muted-foreground">{percent}%</div>
               </>
             )}
             {phase === 'downloaded' && (
               <>
-                <div className="truncate text-sm font-bold text-white">
-                  O'rnatish uchun tayyor <span className="text-emerald-300">v{info.version}</span>
+                <div className="truncate text-sm font-bold text-foreground">
+                  O'rnatish uchun tayyor <span className="text-primary">v{info.version}</span>
                 </div>
-                <div className="mt-0.5 text-xs text-[#8ba0b8]">Dasturni qayta ishga tushiring</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">Dasturni qayta ishga tushiring</div>
               </>
             )}
           </div>
@@ -145,7 +145,7 @@ export function UpdateBanner() {
           {phase === 'available' && (
             <button
               onClick={handleDownload}
-              className="shrink-0 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-200 transition hover:border-cyan-300/60 hover:bg-cyan-300/15 hover:text-white"
+              className="shrink-0 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-foreground transition hover:border-strong hover:bg-surface-3"
             >
               Yuklab olish
             </button>
@@ -153,7 +153,7 @@ export function UpdateBanner() {
           {phase === 'downloaded' && (
             <button
               onClick={handleInstall}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-3 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-300/60 hover:bg-emerald-300/15 hover:text-white"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-transparent bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:bg-primary-hover"
             >
               <RefreshCw className="size-3.5" />
               Qayta ishga tushirish
@@ -164,7 +164,7 @@ export function UpdateBanner() {
             <button
               onClick={() => setDismissed(true)}
               aria-label="Yopish"
-              className="shrink-0 rounded-lg p-1.5 text-[#8ba0b8] transition hover:bg-white/5 hover:text-white"
+              className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-surface-3 hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
