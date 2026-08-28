@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  Cuboid,
   Gamepad2,
   Gauge,
   Loader2,
@@ -139,36 +140,37 @@ function LoginPanel({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 24 }}
+      initial={{ opacity: 0, x: 16 }}
       animate={{ opacity: 1, x: 0 }}
-      className="relative w-full max-w-[420px] rounded-3xl border border-cyan-300/20 bg-[#101822]/95 p-8 shadow-[0_24px_80px_rgba(0,240,255,0.09)]"
+      transition={{ type: 'spring', stiffness: 140, damping: 20 }}
+      className="w-full max-w-[360px]"
     >
-      <div className="mb-8">
-        <h2 className="mt-3 text-3xl font-black text-white">Launcherga kirish</h2>
-        <p className="mt-2 text-sm text-[#8ba0b8]">CyberCraft akkauntingiz orqali davom eting.</p>
+      <div className="mb-7">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Hisobga kirish</h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">CyberCraft akkauntingiz orqali davom eting.</p>
       </div>
 
       <div className="space-y-4">
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">Username</span>
+          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Username</span>
           <input
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
+            className="h-12 w-full rounded-lg border border-border bg-surface-2 px-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
             placeholder="Username"
             autoComplete="username"
           />
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">Parol</span>
+          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Parol</span>
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') submit()
             }}
-            className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
+            className="h-12 w-full rounded-lg border border-border bg-surface-2 px-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
             placeholder="••••••••••"
             type="password"
             autoComplete="current-password"
@@ -176,7 +178,7 @@ function LoginPanel({
         </label>
 
         {displayError && (
-          <div className="flex gap-2 rounded-xl border border-red-400/25 bg-red-500/10 p-3 text-xs text-red-200">
+          <div className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <span>{displayError}</span>
           </div>
@@ -185,16 +187,16 @@ function LoginPanel({
         <button
           onClick={submit}
           disabled={busy}
-          className="cyber-btn flex h-[52px] w-full items-center justify-center gap-2 rounded-xl text-sm font-black tracking-wide disabled:opacity-70"
+          className="cyber-btn flex h-[52px] w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold tracking-wide disabled:opacity-70"
         >
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}
           {busy ? 'Kirilmoqda...' : 'Kirish'}
         </button>
 
         <div className="flex items-center gap-3 py-1">
-          <span className="h-px flex-1 bg-[#263246]" />
-          <span className="text-xs text-[#8ba0b8]">Yoki tezkor kirish</span>
-          <span className="h-px flex-1 bg-[#263246]" />
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">Yoki tezkor kirish</span>
+          <span className="h-px flex-1 bg-border" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -211,7 +213,7 @@ function LoginPanel({
               }
             }}
             disabled={busy}
-            className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08] cursor-pointer disabled:opacity-50"
+            className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-border bg-surface-2 text-sm font-semibold text-foreground transition hover:border-strong hover:bg-surface-3 cursor-pointer disabled:opacity-50"
           >
             <svg className="size-4.5" viewBox="0 0 24 24">
               <path
@@ -246,7 +248,7 @@ function LoginPanel({
               }
             }}
             disabled={busy}
-            className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sm font-semibold text-white transition hover:border-sky-500/35 hover:bg-sky-500/10 cursor-pointer disabled:opacity-50"
+            className="flex h-11 items-center justify-center gap-2.5 rounded-lg border border-border bg-surface-2 text-sm font-semibold text-foreground transition hover:border-strong hover:bg-surface-3 cursor-pointer disabled:opacity-50"
           >
             <svg className="size-4.5 fill-current text-[#229ED9]" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-1.19.8-3.07 2.07-3.07 2.07-.47.32-.9.49-1.29.48-.43-.01-1.25-.24-1.86-.44-.75-.24-1.35-.37-1.3-.79.03-.22.33-.44.9-.66 3.52-1.53 5.87-2.54 7.05-3.03 3.35-1.39 4.05-1.63 4.5-1.64.1 0 .33.02.47.14.12.1.15.24.17.34.02.09.03.26.01.4z" />
@@ -259,79 +261,59 @@ function LoginPanel({
   )
 }
 
-function ServerCard({
-  server,
-  selected,
-  onSelect,
-}: {
-  server: LauncherServer
-  selected: boolean
-  onSelect: () => void
-}) {
-  const online = isOnline(server)
-  return (
-    <button
-      onClick={onSelect}
-      className={`group relative flex h-[92px] w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${selected
-          ? 'border-cyan-300/90 bg-[#102032] shadow-[0_0_24px_rgba(0,240,255,0.18)]'
-          : online
-            ? 'border-[#2a3548] bg-[#10161f]/95 hover:border-cyan-300/35'
-            : 'border-red-300/25 bg-[#16141b]/90 hover:border-red-300/45'
-        }`}
-    >
-      <span
-        className={`flex size-12 shrink-0 items-center justify-center rounded-xl border ${online ? 'border-cyan-200/20 bg-gradient-to-br from-[#224d65] to-[#22ff91]/70' : 'border-red-200/20 bg-[#252a35]'
-          }`}
-      >
-        <Server className={online ? 'size-5 text-[#071017]' : 'size-5 text-red-200'} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-base font-black text-white">{server.name}</span>
-        <span className="mt-1 block truncate text-xs text-[#8ba0b8]">{server.server_type || server.loader || 'CyberCraft'}</span>
-        <span className={`mt-1 block text-xs font-semibold ${online ? 'text-emerald-300' : 'text-red-200'}`}>
-          {metricNumber(server.current_players)} / {metricNumber(server.max_players)}
-        </span>
-      </span>
-      <span
-        className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${online ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-300' : 'border-red-300/35 bg-red-400/10 text-red-200'
-          }`}
-      >
-        {statusLabel(server)}
-      </span>
-    </button>
-  )
-}
+const LOGIN_FEATURES = [
+  { icon: ShieldCheck, text: "Whitelist orqali himoyalangan kirish" },
+  { icon: RefreshCw, text: 'Mod va resurslar avtomatik sinxronlanadi' },
+  { icon: Gauge, text: 'Optimallashtirilgan JVM bilan barqaror FPS' },
+]
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  accent,
-  index = 0,
-}: {
-  icon: typeof Users
-  label: string
-  value: string
-  accent: string
-  index?: number
-}) {
+function LoginHero() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.25, ease: 'easeOut' }}
-      className="rounded-2xl border border-[#263246] bg-[#101822]/95 p-3 hover:border-white/10 hover:bg-[#121c27] transition-all duration-300"
-    >
-      <div className="flex items-center gap-2">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl border" style={{ borderColor: `${accent}45`, background: `${accent}20` }}>
-          <Icon className="size-4" style={{ color: accent }} />
-        </span>
-        <div className="min-w-0">
-          <div className="truncate text-base font-black text-white">{value}</div>
-          <div className="text-[11px] font-medium text-[#8ba0b8]">{label}</div>
+    <div className="relative hidden h-full shrink-0 basis-[44%] flex-col justify-between overflow-hidden border-r border-border bg-surface-2 p-9 sm:flex">
+      <div className="pointer-events-none absolute -left-24 -top-24 size-[280px] rounded-full bg-primary/[0.06] blur-[110px]" />
+      <div className="pointer-events-none absolute -bottom-28 -right-16 size-[260px] rounded-full bg-white/[0.03] blur-[120px]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:36px_36px]" />
+
+      <div className="relative flex items-center gap-2.5">
+        <div className="relative flex size-9 items-center justify-center rounded-xl bg-primary">
+          <Cuboid className="size-5 text-primary-foreground" />
         </div>
+        <span className="text-sm font-semibold tracking-tight">
+          <span className="text-primary">CYBER</span>
+          <span className="text-foreground">CRAFT</span>
+        </span>
       </div>
-    </motion.div>
+
+      <div className="relative">
+        <h1 className="text-[2.4rem] font-semibold leading-[1.08] tracking-tight text-foreground">
+          O'yiningizni
+          <br />
+          <span className="text-primary">bir bosishda</span>
+          <br />
+          boshlang.
+        </h1>
+        <p className="mt-4 max-w-[30ch] text-sm leading-6 text-muted-foreground">
+          Modlar, resurs paketlar va yadro sozlamalari — barchasi avtomatik yuklab olinadi va sinxronlanadi.
+        </p>
+      </div>
+
+      <ul className="relative space-y-3.5">
+        {LOGIN_FEATURES.map(({ icon: Icon, text }, i) => (
+          <motion.li
+            key={text}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 + i * 0.08, duration: 0.3, ease: 'easeOut' }}
+            className="flex items-center gap-3 text-sm text-muted-foreground"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-3">
+              <Icon className="size-4 text-primary" />
+            </span>
+            {text}
+          </motion.li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
@@ -775,8 +757,11 @@ export function HomeView({
 
   if (!user && !loadingSession) {
     return (
-      <div className="relative flex h-full items-center justify-center">
-        <LoginPanel onLogin={onLogin} onOAuthLogin={onOAuthLogin} error={connectionError} />
+      <div className="relative flex h-full overflow-hidden rounded-xl border border-border bg-surface">
+        <LoginHero />
+        <div className="flex flex-1 items-center justify-center p-8">
+          <LoginPanel onLogin={onLogin} onOAuthLogin={onOAuthLogin} error={connectionError} />
+        </div>
       </div>
     )
   }
