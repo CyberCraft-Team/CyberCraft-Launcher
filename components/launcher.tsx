@@ -134,41 +134,38 @@ export function Launcher() {
   const onlinePlayers = servers.reduce((sum, server) => sum + (server.current_players || 0), 0)
 
   return (
-    <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#070b10]">
-      <div className="pointer-events-none absolute inset-0 bg-[#070b10]" />
+    <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-background" />
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-10"
+        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.04]"
         style={{ backgroundImage: 'url(/launcher-bg.png)' }}
       />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
-      <div className="pointer-events-none absolute -left-32 -top-32 size-[420px] rounded-full bg-cyan-300/12 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-36 right-0 size-[420px] rounded-full bg-emerald-300/10 blur-[150px]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(90deg,#ffffff_1px,transparent_1px),linear-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px]" />
 
       <header
-        className="relative z-10 flex h-16 select-none items-center justify-between border-b border-[#1f2a3d] bg-[#080d13]/95 px-4"
+        className="relative z-10 flex h-16 select-none items-center justify-between border-b border-border bg-background/95 px-4"
         style={{
           WebkitAppRegion: 'drag',
         } as React.CSSProperties}
       >
         <div className="flex items-center gap-2.5">
-          <div className="relative flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-300 to-emerald-300 shadow-[0_0_18px_rgba(0,240,255,0.38)]">
-            <Cuboid className="size-6 text-[#071017]" />
-            <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-yellow-300 shadow-[0_0_8px_rgba(255,222,89,0.8)]" />
+          <div className="relative flex size-10 items-center justify-center rounded-xl bg-primary">
+            <Cuboid className="size-6 text-primary-foreground" />
           </div>
 
-          <span className="font-display text-base tracking-[0.18em]">
-            <span className="text-cyan-300 text-glow">CYBER</span>
-            <span className="text-white">CRAFT</span>
+          <span className="text-base font-semibold tracking-tight">
+            <span className="text-primary">CYBER</span>
+            <span className="text-foreground">CRAFT</span>
           </span>
 
           {user && (
-            <span className="ml-2.5 hidden items-center gap-1.5 text-xs text-[#8ba0b8] sm:flex">
+            <span className="ml-2.5 hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
               <span className={`size-1.5 rounded-full ${
                 connectionStatus === 'connected'
-                  ? 'bg-emerald-300 shadow-[0_0_8px_rgba(34,255,145,0.9)] animate-pulse'
+                  ? 'bg-primary'
                   : connectionStatus === 'offline'
-                    ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
-                    : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9)] animate-pulse'
+                    ? 'bg-warning'
+                    : 'bg-destructive'
               }`} />
               {connectionStatus === 'connected'
                 ? `${onlinePlayers.toLocaleString()} o'yinchi onlayn`
@@ -199,7 +196,7 @@ export function Launcher() {
                 const profileUrl = `${domain}/cabinet/profile`
                 window.electronAPI.openExternal(profileUrl)
               }}
-              className="mr-2 flex items-center gap-2.5 rounded border border-cyan-300/25 bg-[#0e141f]/95 p-0.5 pr-3.5 text-sm font-bold text-white transition hover:border-cyan-300/60 hover:shadow-[0_0_12px_rgba(0,240,255,0.18)]"
+              className="mr-2 flex items-center gap-2.5 rounded border border-border bg-surface p-0.5 pr-3.5 text-sm font-bold text-foreground transition hover:border-strong"
               aria-label="Profilni ochish"
               style={{ borderRadius: '10px' } as React.CSSProperties}
             >
@@ -207,11 +204,11 @@ export function Launcher() {
                 <img
                   src={user.skin_face_url}
                   alt={user.username}
-                  className="size-9 rounded border border-cyan-300/20 object-cover"
+                  className="size-9 rounded border border-border object-cover"
                   style={{ imageRendering: 'pixelated' }}
                 />
               ) : (
-                <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-emerald-300 font-display text-xs font-black text-[#071017]">
+                <span className="flex size-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                   {(user?.username || 'P').slice(0, 1).toUpperCase()}
                 </span>
               )}
@@ -222,14 +219,14 @@ export function Launcher() {
           <button
             onClick={() => window.electronAPI?.minimize()}
             aria-label="Kichraytirish"
-            className="rounded-lg p-2 text-[#8ba0b8] transition hover:bg-cyan-300/10 hover:text-cyan-300"
+            className="rounded-lg p-2 text-muted-foreground transition hover:bg-surface-3 hover:text-foreground"
           >
             <Minus className="size-4.5" />
           </button>
           <button
             onClick={() => window.electronAPI?.close()}
             aria-label="Yopish"
-            className="rounded-lg p-2 text-[#8ba0b8] transition hover:bg-red-400/15 hover:text-red-300"
+            className="rounded-lg p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
           >
             <X className="size-4.5" />
           </button>
@@ -241,7 +238,7 @@ export function Launcher() {
       <div className="relative z-10 flex min-h-0 flex-1">
         {user && (
           <nav
-            className="flex w-14 shrink-0 flex-col items-center rounded-3xl border border-white/8 bg-[#080d14]/95 py-3.5 px-1.5 h-fit max-h-[calc(100vh-80px)] my-auto ml-4 shadow-[0_16px_48px_rgba(0,0,0,0.4)] animate-fade-in"
+            className="flex w-14 shrink-0 flex-col items-center rounded-xl border border-border bg-surface py-3.5 px-1.5 h-fit max-h-[calc(100vh-80px)] my-auto ml-4 shadow-md animate-fade-in"
           >
             {/* Server List - height adapts to number of servers dynamically */}
             <div className="flex w-full flex-col items-center gap-2.5 shrink-0 my-1">
@@ -250,20 +247,23 @@ export function Launcher() {
                 const online = ['online', 'running', 'starting'].includes(server.status)
                 
                 return (
-                  <button
+                  <motion.button
                     key={server.id}
                     onClick={() => {
                       setSelectedServerId(server.id)
                       setTab('home')
                     }}
-                    className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition ${
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.92 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+                    className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${
                       active
-                        ? 'border-cyan-300 bg-cyan-300/[0.08] text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
-                        : 'border-[#263246] bg-[#0d1219]/90 text-[#8ba0b8] hover:border-cyan-300/40 hover:text-white'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-surface-2 text-muted-foreground hover:border-strong hover:text-foreground'
                     }`}
                   >
                     {active && (
-                      <span className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-1 h-6 rounded-r bg-cyan-300 shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
+                      <span className="absolute left-[-6px] top-1/2 -translate-y-1/2 w-1 h-6 rounded-r bg-primary" />
                     )}
                     
                     {server.icon_url ? (
@@ -276,52 +276,58 @@ export function Launcher() {
                       <Server className="size-5" />
                     )}
                     
-                    <span className={`absolute bottom-[-1px] right-[-1px] size-2.5 rounded-full border border-[#080d14] ${
-                      online ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-red-400'
+                    <span className={`absolute bottom-[-1px] right-[-1px] size-2.5 rounded-full border border-surface ${
+                      online ? 'bg-primary' : 'bg-destructive'
                     }`} />
-                    
-                    <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+
+                    <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-surface border border-border text-foreground text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                       {server.name} ({online ? `${server.current_players}/${server.max_players}` : 'Oflayn'})
                     </div>
-                  </button>
+                  </motion.button>
                 )
               })}
             </div>
 
-            <span className="w-8 h-px bg-[#1f2a3d] my-1 shrink-0" />
+            <span className="w-8 h-px bg-border my-1 shrink-0" />
 
             {/* Settings tab button */}
-            <button
+            <motion.button
               onClick={() => setTab('settings')}
-              className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition ${
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+              className={`group relative flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${
                 tab === 'settings'
-                  ? 'border-cyan-300 bg-cyan-300/[0.08] text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
-                  : 'border-[#263246] bg-[#0d1219]/90 text-[#8ba0b8] hover:border-cyan-300/40 hover:text-white'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-surface-2 text-muted-foreground hover:border-strong hover:text-foreground'
               }`}
             >
               {tab === 'settings' && (
                 <motion.span
                   layoutId="nav-active"
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                  className="absolute inset-0 rounded-xl bg-cyan-300/[0.06]"
+                  className="absolute inset-0 rounded-xl bg-primary/10"
                 />
               )}
               <Settings className="relative size-5 shrink-0" />
-              <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-surface border border-border text-foreground text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
                 Sozlamalar
               </div>
-            </button>
+            </motion.button>
 
             {/* Logout button (avatar completely removed) */}
-            <button
+            <motion.button
               onClick={handleLogout}
-              className="group relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-[#263246] bg-red-500/5 text-[#8ba0b8] transition hover:border-red-400/30 hover:text-red-400 mt-2"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+              className="group relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-transparent text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive mt-2"
             >
               <LogOut className="size-5" />
-              <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-[#101822] border border-[#263246] text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-all origin-left bg-surface border border-border text-foreground text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap z-50">
                 Chiqish
               </div>
-            </button>
+            </motion.button>
           </nav>
         )}
 
