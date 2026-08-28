@@ -11,6 +11,7 @@ import {
   MemoryStick,
   RotateCcw,
   Save,
+  Server,
   ShieldCheck,
   Terminal,
   ToggleRight,
@@ -137,6 +138,7 @@ export function SettingsView() {
         setArgs(settings.args || DEFAULT_ARGS)
         setOptimize(settings.optimize)
         setFullscreen(settings.fullscreen)
+        setAutoClose(settings.autoClose ?? true)
         setApiBaseUrl(settings.apiBaseUrl || 'http://127.0.0.1:8000/api/v1')
         setGamePath(settings.gamePath || '')
         setModsPath(settings.modsPath || '')
@@ -173,7 +175,7 @@ export function SettingsView() {
     if (!window.electronAPI) return
 
     setSaving(true)
-    const success = await window.electronAPI.saveSettings({ ram, args, optimize, fullscreen, apiBaseUrl, gamePath, modsPath })
+    const success = await window.electronAPI.saveSettings({ ram, args, optimize, fullscreen, autoClose, apiBaseUrl, gamePath, modsPath })
     setSaving(false)
     if (success) {
       setSaved(true)
@@ -290,6 +292,22 @@ export function SettingsView() {
                 desc="Tavsiya etilgan GC flaglar bilan barqaror launch."
               />
             </div>
+          </SettingsCard>
+
+          <SettingsCard icon={Server} title="Server manzili" description="Launcher qaysi backend serverga ulanishini belgilaydi.">
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">API base URL</span>
+              <input
+                value={apiBaseUrl}
+                onChange={(event) => setApiBaseUrl(event.target.value)}
+                className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
+                placeholder="http://127.0.0.1:8000/api/v1"
+                spellCheck={false}
+                autoCapitalize="off"
+                autoCorrect="off"
+              />
+            </label>
+            <p className="mt-2 text-xs text-[#8ba0b8]">O‘zgartirilgach qayta tizimga kirish talab qilinishi mumkin.</p>
           </SettingsCard>
         </div>
       </div>

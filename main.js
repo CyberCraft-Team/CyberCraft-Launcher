@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS = {
   args: '-XX:+UseZGC -XX:MaxGCPauseMillis=10 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch',
   optimize: true,
   fullscreen: false,
+  autoClose: true,
   apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
 }
 
@@ -139,7 +140,9 @@ async function apiRequest(pathname, options = {}) {
   const payload = contentType.includes('application/json') ? await response.json() : await response.text()
   if (!response.ok) {
     const message = typeof payload === 'object' ? payload.error || payload.detail || JSON.stringify(payload) : payload
-    throw new Error(message || `Request failed with ${response.status}`)
+    const err = new Error(message || `Request failed with ${response.status}`)
+    err.status = response.status
+    throw err
   }
   return payload
 }
@@ -162,8 +165,14 @@ ipcMain.handle('api:get-session', async () => {
     saveSession({ ...session, user: me.user })
     return { authenticated: true, user: me.user }
   } catch (error) {
-    clearSession()
-    return { authenticated: false, user: null, error: error.message }
+    if (error.status === 401 || error.status === 403) {
+      clearSession()
+      return { authenticated: false, user: null, error: error.message }
+    }
+    // Network failure, backend unreachable, timeout, or a non-auth server
+    // error - the saved token may still be valid, so keep the session on
+    // disk and let the caller know we couldn't verify it right now.
+    return { authenticated: true, user: session.user, offline: true, error: error.message }
   }
 })
 
@@ -404,10 +413,6 @@ ipcMain.handle('api:get-manifest', async (event, serverId) => {
     if (cached) return cached
     throw error
   }
-})
-
-ipcMain.handle('api:create-minecraft-session', async () => {
-  return apiRequest('/minecraft/session/create/', { method: 'POST' })
 })
 
 ipcMain.handle('download-server-files', async (event, serverId) => {
@@ -869,12 +874,15 @@ ipcMain.handle('launch-game', async (event, options) => {
 
     quitWithoutKillingGame = true
 
-    // Close the launcher window after a brief delay
-    setTimeout(() => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.close()
-      }
-    }, 1500)
+    // Close the launcher window after a brief delay, unless the user has
+    // disabled auto-close in settings.
+    if (settings.autoClose !== false) {
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.close()
+        }
+      }, 1500)
+    }
 
     activeGameProcess.on('exit', (code) => {
       activeGameProcess = null

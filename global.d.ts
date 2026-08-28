@@ -111,6 +111,7 @@ declare global {
       args: string
       optimize: boolean
       fullscreen: boolean
+      autoClose: boolean
       apiBaseUrl: string
       gamePath?: string
       modsPath?: string
@@ -120,19 +121,19 @@ declare global {
       args: string
       optimize: boolean
       fullscreen: boolean
+      autoClose?: boolean
       apiBaseUrl?: string
       gamePath?: string
       modsPath?: string
     }) => Promise<boolean>
     selectDirectory: (defaultPath?: string) => Promise<string | null>
 
-    getSession: () => Promise<{ authenticated: boolean; user: LauncherUser | null; error?: string }>
+    getSession: () => Promise<{ authenticated: boolean; user: LauncherUser | null; offline?: boolean; error?: string }>
     login: (credentials: { username: string; password: string }) => Promise<{ authenticated: boolean; user: LauncherUser }>
     startOauth: (provider: 'google' | 'telegram') => Promise<{ authenticated: boolean; user: LauncherUser }>
     logout: () => Promise<boolean>
     listServers: () => Promise<LauncherServer[]>
     getManifest: (serverId: string) => Promise<LauncherManifest>
-    createMinecraftSession: () => Promise<{ success: boolean; username: string; uuid: string; expires_in: number }>
     checkLauncherUpdate: () => Promise<any>
     getWsToken: () => Promise<{ token: string; expires_at: string; ws_endpoints: Record<string, string> }>
 

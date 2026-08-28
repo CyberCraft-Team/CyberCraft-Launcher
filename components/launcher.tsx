@@ -5,6 +5,7 @@ import { Home, Settings, Minus, X, Gamepad2, LogOut, RefreshCw, Cuboid, User, Se
 import { useEffect, useState } from 'react'
 import { HomeView } from './home-view'
 import { SettingsView } from './settings-view'
+import { UpdateBanner } from './update-banner'
 
 type Tab = 'home' | 'settings'
 
@@ -88,6 +89,11 @@ export function Launcher() {
   }, [user])
 
   useEffect(() => {
+    if (!window.electronAPI) return
+    window.electronAPI.checkUpdate().catch(() => {})
+  }, [])
+
+  useEffect(() => {
     if (servers.length > 0 && !selectedServerId) {
       setSelectedServerId(servers[0].id)
     }
@@ -155,20 +161,22 @@ export function Launcher() {
             <span className="text-white">CRAFT</span>
           </span>
 
-          <span className="ml-2.5 hidden items-center gap-1.5 text-xs text-[#8ba0b8] sm:flex">
-            <span className={`size-1.5 rounded-full ${
-              connectionStatus === 'connected' 
-                ? 'bg-emerald-300 shadow-[0_0_8px_rgba(34,255,145,0.9)] animate-pulse' 
-                : connectionStatus === 'offline' 
-                  ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
-                  : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9)] animate-pulse'
-            }`} />
-            {connectionStatus === 'connected' 
-              ? `${onlinePlayers.toLocaleString()} o'yinchi onlayn` 
-              : connectionStatus === 'offline' 
-                ? 'Oflayn (keshdan)' 
-                : 'Ulanish uzildi'}
-          </span>
+          {user && (
+            <span className="ml-2.5 hidden items-center gap-1.5 text-xs text-[#8ba0b8] sm:flex">
+              <span className={`size-1.5 rounded-full ${
+                connectionStatus === 'connected'
+                  ? 'bg-emerald-300 shadow-[0_0_8px_rgba(34,255,145,0.9)] animate-pulse'
+                  : connectionStatus === 'offline'
+                    ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
+                    : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9)] animate-pulse'
+              }`} />
+              {connectionStatus === 'connected'
+                ? `${onlinePlayers.toLocaleString()} o'yinchi onlayn`
+                : connectionStatus === 'offline'
+                  ? 'Oflayn (keshdan)'
+                  : 'Ulanish uzildi'}
+            </span>
+          )}
         </div>
 
         <div
@@ -227,6 +235,8 @@ export function Launcher() {
           </button>
         </div>
       </header>
+
+      <UpdateBanner />
 
       <div className="relative z-10 flex min-h-0 flex-1">
         {user && (

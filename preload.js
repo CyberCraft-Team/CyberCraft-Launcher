@@ -15,7 +15,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   logout: () => ipcRenderer.invoke('api:logout'),
   listServers: () => ipcRenderer.invoke('api:list-servers'),
   getManifest: (serverId) => ipcRenderer.invoke('api:get-manifest', serverId),
-  createMinecraftSession: () => ipcRenderer.invoke('api:create-minecraft-session'),
   checkLauncherUpdate: () => ipcRenderer.invoke('api:check-launcher-update'),
   getWsToken: () => ipcRenderer.invoke('api:ws-token'),
 
