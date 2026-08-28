@@ -34,14 +34,14 @@ function SettingsCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-3xl border border-[#263246] bg-[#101822]/92 p-5 shadow-[0_16px_48px_rgba(0,0,0,0.16)]">
+    <section className="rounded-xl border border-border bg-surface p-5">
       <div className="flex items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/25 bg-cyan-300/10">
-          <Icon className="size-5 text-cyan-300" />
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-3">
+          <Icon className="size-5 text-primary" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-black text-white">{title}</h2>
-          <p className="mt-1 text-xs leading-5 text-[#8ba0b8]">{description}</p>
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
         </div>
       </div>
       <div className="mt-5">{children}</div>
@@ -63,17 +63,17 @@ function ToggleRow({
   return (
     <button
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4 text-left transition hover:border-cyan-300/35"
+      className="flex w-full items-center justify-between gap-4 rounded-lg border border-border bg-surface-2 p-4 text-left transition hover:border-strong"
     >
       <span>
-        <span className="block text-sm font-bold text-white">{label}</span>
-        <span className="mt-1 block text-xs text-[#8ba0b8]">{desc}</span>
+        <span className="block text-sm font-bold text-foreground">{label}</span>
+        <span className="mt-1 block text-xs text-muted-foreground">{desc}</span>
       </span>
-      <span className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-cyan-300/25' : 'bg-[#263246]'}`}>
+      <span className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-primary/30' : 'bg-surface-3'}`}>
         <motion.span
           animate={{ x: checked ? 22 : 3 }}
           transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-          className={`absolute top-1 size-5 rounded-full ${checked ? 'bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.65)]' : 'bg-[#8ba0b8]'}`}
+          className={`absolute top-1 size-5 rounded-full ${checked ? 'bg-primary' : 'bg-subtle-foreground'}`}
         />
       </span>
     </button>
@@ -92,15 +92,15 @@ function PathRow({
   onClick?: () => void
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
-      <FolderOpen className="size-5 shrink-0 text-cyan-300" />
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-4">
+      <FolderOpen className="size-5 shrink-0 text-primary" />
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-bold text-white">{label}</div>
-        <div className="mt-1 truncate font-mono text-xs text-[#8ba0b8]">{value}</div>
+        <div className="text-sm font-bold text-foreground">{label}</div>
+        <div className="mt-1 truncate font-mono text-xs text-muted-foreground">{value}</div>
       </div>
-      <button 
+      <button
         onClick={onClick}
-        className="rounded-xl border border-[#2b3950] px-3 py-2 text-xs font-bold text-[#dfeaff] transition hover:border-cyan-300/40 cursor-pointer"
+        className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-foreground transition hover:border-strong cursor-pointer"
       >
         {action}
       </button>
@@ -190,22 +190,24 @@ export function SettingsView() {
       <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
         <div className="mt-2 flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-black text-white">
-              <span className="text-cyan-300 text-glow">Soz</span>lamalar
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+              <span className="text-primary">Soz</span>lamalar
             </h1>
           </div>
-          <button
+          <motion.button
             onClick={handleSave}
             disabled={saving}
-            className={`flex h-11 items-center gap-2 rounded-2xl px-5 text-sm font-black transition disabled:opacity-70 ${
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+            className={`flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-semibold transition-colors disabled:opacity-70 ${
               saved
-                ? 'bg-gradient-to-br from-emerald-300 to-green-500 text-[#071017]'
-                : 'bg-gradient-to-br from-cyan-300 to-emerald-300 text-[#071017] shadow-[0_0_24px_rgba(0,240,255,0.28)]'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-primary text-primary-foreground hover:bg-primary-hover'
             }`}
           >
             {saved ? <CheckCircle2 className="size-4" /> : saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {saved ? 'Saqlandi' : saving ? 'Saqlanmoqda' : 'Saqlash'}
-          </button>
+          </motion.button>
         </div>
       </motion.header>
 
@@ -213,13 +215,13 @@ export function SettingsView() {
         <div className="max-w-[700px] mx-auto space-y-5 pb-6">
           <SettingsCard icon={MemoryStick} title="RAM ajratish" description="Minecraft jarayoni uchun ajratiladigan xotira hajmi.">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#8ba0b8]">Launcher tavsiyasi: 6-8 GB</span>
-              <span className="font-mono text-2xl font-black text-cyan-300 text-glow">{ram} GB</span>
+              <span className="text-sm font-semibold text-muted-foreground">Launcher tavsiyasi: 6-8 GB</span>
+              <span className="font-mono text-2xl font-semibold text-foreground">{ram} GB</span>
             </div>
             <div className="relative mt-5">
-              <div className="h-3 rounded-full bg-[#1c2738]">
+              <div className="h-3 rounded-full bg-surface-3">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_14px_rgba(0,240,255,0.45)]"
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -232,7 +234,7 @@ export function SettingsView() {
                 className="absolute inset-x-0 top-0 h-3 w-full cursor-pointer opacity-0"
                 aria-label="RAM hajmi"
               />
-              <div className="mt-3 flex justify-between font-mono text-[11px] text-[#8ba0b8]">
+              <div className="mt-3 flex justify-between font-mono text-[11px] text-muted-foreground">
                 <span>{MIN_RAM} GB</span>
                 <span>{maxRam} GB</span>
               </div>
@@ -247,23 +249,23 @@ export function SettingsView() {
           </SettingsCard>
 
           <SettingsCard icon={Cpu} title="Java path/version" description="Launcher topgan eng mos Java runtime.">
-            <div className="rounded-2xl border border-[#263246] bg-[#0d1219]/95 p-4">
+            <div className="rounded-lg border border-border bg-surface-2 p-4">
               <div className="flex items-center gap-3">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-300/10">
-                  <ShieldCheck className="size-5 text-emerald-300" />
+                <span className="flex size-9 items-center justify-center rounded-xl bg-surface-3">
+                  <ShieldCheck className="size-5 text-primary" />
                 </span>
                 <div className="min-w-0">
-                  <div className="font-bold text-white">
+                  <div className="font-bold text-foreground">
                     {javaInfo ? `Java ${javaInfo.version}` : detectingJava ? 'Aniqlanmoqda...' : 'Java aniqlanmagan'}
                   </div>
-                  <div className="truncate text-xs text-[#8ba0b8]">{javaInfo?.vendor || 'Detect tugmasini bosing'}</div>
+                  <div className="truncate text-xs text-muted-foreground">{javaInfo?.vendor || 'Detect tugmasini bosing'}</div>
                 </div>
               </div>
-              <div className="mt-3 truncate font-mono text-[11px] text-[#8ba0b8]">{javaInfo?.path || 'Path mavjud emas'}</div>
+              <div className="mt-3 truncate font-mono text-[11px] text-muted-foreground">{javaInfo?.path || 'Path mavjud emas'}</div>
               <button
                 onClick={detectJava}
                 disabled={detectingJava}
-                className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#2b3950] text-xs font-black text-[#dfeaff] transition hover:border-cyan-300/40 disabled:opacity-70 cursor-pointer"
+                className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border text-xs font-semibold text-foreground transition hover:border-strong disabled:opacity-70 cursor-pointer"
               >
                 {detectingJava ? <Loader2 className="size-4 animate-spin" /> : <RefreshIcon />}
                 Qayta aniqlash
@@ -296,18 +298,18 @@ export function SettingsView() {
 
           <SettingsCard icon={Server} title="Server manzili" description="Launcher qaysi backend serverga ulanishini belgilaydi.">
             <label className="block">
-              <span className="mb-2 block text-xs font-semibold text-[#8ba0b8]">API base URL</span>
+              <span className="mb-2 block text-xs font-semibold text-muted-foreground">API base URL</span>
               <input
                 value={apiBaseUrl}
                 onChange={(event) => setApiBaseUrl(event.target.value)}
-                className="h-12 w-full rounded-xl border border-[#263246] bg-[#0d1219] px-4 text-sm text-white outline-none transition focus:border-cyan-300 focus:shadow-[0_0_0_2px_rgba(0,240,255,0.14)]"
+                className="h-12 w-full rounded-lg border border-border bg-surface-2 px-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="http://127.0.0.1:8000/api/v1"
                 spellCheck={false}
                 autoCapitalize="off"
                 autoCorrect="off"
               />
             </label>
-            <p className="mt-2 text-xs text-[#8ba0b8]">O‘zgartirilgach qayta tizimga kirish talab qilinishi mumkin.</p>
+            <p className="mt-2 text-xs text-muted-foreground">O‘zgartirilgach qayta tizimga kirish talab qilinishi mumkin.</p>
           </SettingsCard>
         </div>
       </div>
