@@ -28,3 +28,6 @@ dist/
 # Temp/tests
 test-minecraft/
 test_javas.js
+
+# Brainstorming session scratch
+.superpowers/
