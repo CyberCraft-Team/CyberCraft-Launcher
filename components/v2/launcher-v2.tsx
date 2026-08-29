@@ -94,8 +94,10 @@ function StatBlock({
     >
       <span className="v2-pixel text-[8px] leading-none text-[var(--v2-faint)]">{label}</span>
       <span className="mt-3 flex items-baseline gap-1.5">
+        {/* The pixel font is a bitmap design, so its digits are already
+            fixed-width and stay aligned as these values change. */}
         <span
-          className={`v2-mono text-2xl font-bold leading-none tabular-nums ${
+          className={`v2-pixel text-[17px] leading-none ${
             accent ? 'text-[var(--v2-acid)]' : 'text-[var(--v2-text)]'
           }`}
         >
@@ -215,7 +217,10 @@ function DashboardV2({ server }: { server: V2Server }) {
             />
             <span className="v2-pixel text-[8px] text-[var(--v2-faint)]">{statusLabel(server)}</span>
           </div>
-          <h1 className="mt-2 truncate text-[32px] font-bold leading-none tracking-tight text-[var(--v2-text)]">
+          {/* Press Start 2P carries roughly twice the width per glyph of a
+              normal sans, so hero type drops to about 60% of the size it
+              would otherwise take. */}
+          <h1 className="v2-pixel mt-2.5 truncate text-[19px] leading-[1.3] text-[var(--v2-text)]">
             {server.name}
           </h1>
           <p className="mt-2 max-w-[46ch] text-[13px] leading-5 text-[var(--v2-dim)]">

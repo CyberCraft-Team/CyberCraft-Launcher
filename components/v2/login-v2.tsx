@@ -71,7 +71,7 @@ export function LoginV2({ onAuth }: { onAuth: () => void }) {
             ))}
           </div>
 
-          <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-[var(--v2-text)]">
+          <h1 className="v2-pixel text-[17px] leading-[1.7] text-[var(--v2-text)]">
             Blok qo&apos;ying.
             <br />
             <span className="text-[var(--v2-acid)]">Dunyo quring.</span>
@@ -88,7 +88,7 @@ export function LoginV2({ onAuth }: { onAuth: () => void }) {
             { n: '218', l: 'MOD' },
           ].map((s) => (
             <div key={s.l}>
-              <div className="v2-mono text-lg font-bold tabular-nums leading-none text-[var(--v2-text)]">
+              <div className="v2-pixel text-[15px] leading-none text-[var(--v2-text)]">
                 {s.n}
               </div>
               <div className="v2-pixel mt-1.5 text-[7px] text-[var(--v2-faint)]">{s.l}</div>
