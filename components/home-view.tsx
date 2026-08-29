@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { MagneticButton } from './magnetic-button'
 
 type PlayState = 'idle' | 'checking' | 'syncing' | 'launching' | 'running' | 'error'
 type ConnectionStatus = 'connected' | 'offline' | 'disconnected'
@@ -64,45 +65,15 @@ function formatEta(speedBps: number | undefined, transferredBytes: number | unde
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
-function getServerStyles(server: LauncherServer) {
-  const type = (server.server_type || '').toLowerCase();
-  if (type.includes('survival')) {
-    return {
-      gradient: 'from-[#0f3d2e] to-[#111c24]',
-      glow: 'shadow-[0_0_24px_rgba(34,255,145,0.15)]',
-      border: 'border-emerald-500/20',
-      accent: '#22ff91',
-      accentGlow: 'rgba(34, 255, 145, 0.4)',
-      playBtn: 'from-emerald-400 to-teal-500 hover:shadow-[0_0_20px_rgba(34,255,145,0.4)] text-[#071017]'
-    };
-  } else if (type.includes('oneblock') || type.includes('sky')) {
-    return {
-      gradient: 'from-[#0e2c3d] to-[#0b1016]',
-      glow: 'shadow-[0_0_24px_rgba(0,240,255,0.15)]',
-      border: 'border-cyan-500/20',
-      accent: '#00f0ff',
-      accentGlow: 'rgba(0, 240, 255, 0.4)',
-      playBtn: 'from-cyan-300 to-sky-500 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] text-[#071017]'
-    };
-  } else if (type.includes('pvp') || type.includes('arena')) {
-    return {
-      gradient: 'from-[#3d1222] to-[#120a10]',
-      glow: 'shadow-[0_0_24px_rgba(255,0,96,0.15)]',
-      border: 'border-rose-500/20',
-      accent: '#ff0060',
-      accentGlow: 'rgba(255, 0, 96, 0.4)',
-      playBtn: 'from-rose-400 to-red-500 hover:shadow-[0_0_20px_rgba(255,0,96,0.4)] text-white'
-    };
-  } else {
-    return {
-      gradient: 'from-[#2e0e3d] to-[#0e0a12]',
-      glow: 'shadow-[0_0_24px_rgba(204,68,255,0.15)]',
-      border: 'border-fuchsia-500/20',
-      accent: '#cc44ff',
-      accentGlow: 'rgba(204, 68, 255, 0.4)',
-      playBtn: 'from-fuchsia-400 to-violet-500 hover:shadow-[0_0_20px_rgba(204,68,255,0.4)] text-white'
-    };
-  }
+function getServerStyles(_server: LauncherServer) {
+  return {
+    gradient: 'from-surface to-surface-2',
+    glow: '',
+    border: 'border-border',
+    accent: '#3fae7a',
+    accentGlow: 'rgba(63, 174, 122, 0.4)',
+    playBtn: 'bg-primary hover:bg-primary-hover text-primary-foreground',
+  };
 }
 
 function LoginPanel({
@@ -319,26 +290,26 @@ function LoginHero() {
 
 function ServerDetailSkeleton() {
   return (
-    <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-white/5 bg-[#101822]/50 p-4 animate-pulse">
+    <section className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-surface p-4 animate-pulse">
       {/* Hero Banner Skeleton */}
-      <div className="relative h-[130px] rounded-2xl bg-white/[0.02] border border-white/5 p-4 shrink-0 flex flex-col justify-center">
+      <div className="relative h-[130px] rounded-lg bg-surface-2 border border-border p-4 shrink-0 flex flex-col justify-center">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-3 flex-1">
-            <div className="h-7 bg-white/10 rounded-lg w-1/3" />
-            <div className="h-4 bg-white/5 rounded-lg w-2/3" />
+            <div className="h-7 bg-surface-3 rounded-lg w-1/3" />
+            <div className="h-4 bg-surface-3 rounded-lg w-2/3" />
           </div>
-          <div className="h-11 bg-white/10 rounded-xl w-28" />
+          <div className="h-11 bg-surface-3 rounded-xl w-28" />
         </div>
       </div>
 
       {/* Stat Cards Skeleton */}
       <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-2xl border border-[#263246]/50 bg-[#101822]/50 p-3 h-[58px] flex items-center gap-3">
-            <div className="size-8 rounded-xl bg-white/5" />
+          <div key={i} className="rounded-lg border border-border bg-surface p-3 h-[58px] flex items-center gap-3">
+            <div className="size-8 rounded-xl bg-surface-3" />
             <div className="space-y-1.5 flex-1">
-              <div className="h-4 bg-white/10 rounded w-1/2" />
-              <div className="h-3 bg-white/5 rounded w-1/3" />
+              <div className="h-4 bg-surface-3 rounded w-1/2" />
+              <div className="h-3 bg-surface-3 rounded w-1/3" />
             </div>
           </div>
         ))}
@@ -346,13 +317,13 @@ function ServerDetailSkeleton() {
 
       {/* Details Box Skeleton */}
       <div className="mt-4 flex-1 min-h-0">
-        <div className="flex h-full flex-col rounded-2xl border border-[#263246]/50 bg-[#0d1219]/50 p-4 min-h-0">
-          <div className="h-4 bg-white/10 rounded w-1/4 shrink-0 mb-4" />
+        <div className="flex h-full flex-col rounded-lg border border-border bg-surface-2 p-4 min-h-0">
+          <div className="h-4 bg-surface-3 rounded w-1/4 shrink-0 mb-4" />
           <div className="grid flex-1 grid-cols-2 gap-3 text-xs min-h-0">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="rounded-xl bg-white/[0.01] border border-white/5 p-3 flex flex-col justify-center space-y-2">
-                <div className="h-3 bg-white/5 rounded w-1/3" />
-                <div className="h-4 bg-white/10 rounded w-1/2" />
+              <div key={i} className="rounded-xl bg-surface-2 border border-border p-3 flex flex-col justify-center space-y-2">
+                <div className="h-3 bg-surface-3 rounded w-1/3" />
+                <div className="h-4 bg-surface-3 rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -392,14 +363,6 @@ function ServerDetail({
     ? (server.ping && server.ping > 0 ? `${server.ping} ms` : '24 ms')
     : '--'
 
-  let pingAccent = '#ff4d6d'
-  if (online) {
-    const p = server.ping || 24
-    if (p < 50) pingAccent = '#22ff91'
-    else if (p < 150) pingAccent = '#ffaa00'
-    else pingAccent = '#ff4444'
-  }
-
   const modsCount = manifest?.files?.mods?.length ?? 0
   const resourcepacksCount = manifest?.files?.resourcepacks?.length ?? 0
   const shadersCount = manifest?.files?.shaders?.length ?? 0
@@ -411,33 +374,34 @@ function ServerDetail({
   }
 
   return (
-    <section className="flex flex-1 min-h-0 flex-col rounded-3xl border border-cyan-300/20 bg-[#101822]/90 p-5 shadow-[0_24px_80px_rgba(0,240,255,0.08)]">
+    <section className="flex flex-1 min-h-0 flex-col rounded-xl border border-border bg-surface p-5">
       {/* 1. Header Area (StreamCraft style) */}
-      <div className="flex items-start justify-between gap-4 shrink-0 pb-4 border-b border-[#263246]/50">
+      <div className="flex items-start justify-between gap-4 shrink-0 pb-4 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-4xl font-black text-white leading-none tracking-wide">{server.name}</h2>
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">{server.name}</h2>
           </div>
-          <p className="mt-2.5 text-sm leading-6 text-[#c7d4e6] max-w-[550px]">
+          <p className="mt-2.5 text-sm leading-6 text-muted-foreground max-w-[550px]">
             {server.description || 'CyberCraft serveri uchun tayyorlangan modded o‘yin muhiti.'}
           </p>
         </div>
 
         <div className="flex flex-col items-center shrink-0">
-          <button
+          <MagneticButton
             onClick={state === 'running' ? onStop : onPlay}
             disabled={!canPlay && state !== 'running'}
-            className={`flex h-13 px-9 items-center justify-center gap-2.5 rounded-xl text-sm font-black tracking-widest transition-all duration-300 transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${state === 'running'
-                ? 'bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse'
+            strength={10}
+            className={`flex h-13 px-9 items-center justify-center gap-2.5 rounded-lg text-sm font-semibold tracking-wide transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${state === 'running'
+                ? 'bg-destructive text-foreground'
                 : online
-                  ? `bg-gradient-to-br ${styles.playBtn} ${styles.glow} hover:scale-[1.03] cursor-pointer`
-                  : 'bg-[#263246] text-[#8ba0b8]'
+                  ? `${styles.playBtn} ${styles.glow} cursor-pointer`
+                  : 'bg-surface-3 text-subtle-foreground'
               }`}
           >
             {busy ? <Loader2 className="size-5 animate-spin" /> : <Play className="size-4 fill-current" />}
             {state === 'running' ? 'TO‘XTATISH' : busy ? 'TAYYORLANMOQDA' : online ? 'O‘YNASH' : 'SERVER OFLAYN'}
-          </button>
-          <span className="text-[12px] font-bold text-[#8ba0b8] mt-2 hover:text-cyan-300 hover:underline cursor-pointer transition">
+          </MagneticButton>
+          <span className="text-[12px] font-medium text-muted-foreground mt-2 hover:text-primary hover:underline cursor-pointer transition">
             Sozlamalarni sozlash
           </span>
         </div>
@@ -445,26 +409,26 @@ function ServerDetail({
 
       {/* Scrollable Content Container (All elements except header scroll together) */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin mt-4 space-y-4">
-        {/* 2. Media/Features Gallery (4 column blocks like StreamCraft) */}
-        <div className="grid grid-cols-4 gap-3">
+        {/* 2. Media/Features Gallery — asymmetric bento, core version tile featured */}
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-3">
           {[
-            { title: 'Modlar soni', desc: loadingManifest ? 'Yuklanmoqda...' : `${modsCount} ta mod faol`, color: 'from-violet-500/20 to-fuchsia-500/5', border: 'border-violet-500/15', icon: Sparkles },
-            { title: 'Resurs paketlar', desc: loadingManifest ? 'Yuklanmoqda...' : `${resourcepacksCount} ta resurs paket`, color: 'from-cyan-500/20 to-blue-500/5', border: 'border-cyan-500/15', icon: Gamepad2 },
-            { title: 'Shader paketlar', desc: loadingManifest ? 'Yuklanmoqda...' : `${shadersCount} ta shader faol`, color: 'from-emerald-500/20 to-teal-500/5', border: 'border-emerald-500/15', icon: Users },
-            { title: 'Yadro versiyasi', desc: loadingManifest ? 'Yuklanmoqda...' : `Versiya: ${manifestVersion}`, color: 'from-amber-500/20 to-orange-500/5', border: 'border-amber-500/15', icon: RadioTower },
+            { title: 'Yadro versiyasi', desc: loadingManifest ? 'Yuklanmoqda...' : `Versiya: ${manifestVersion}`, color: 'bg-surface-2', border: 'border-border', icon: RadioTower, featured: true },
+            { title: 'Modlar soni', desc: loadingManifest ? 'Yuklanmoqda...' : `${modsCount} ta mod faol`, color: 'bg-surface-2', border: 'border-border', icon: Sparkles },
+            { title: 'Resurs paketlar', desc: loadingManifest ? 'Yuklanmoqda...' : `${resourcepacksCount} ta resurs paket`, color: 'bg-surface-2', border: 'border-border', icon: Gamepad2 },
+            { title: 'Shader paketlar', desc: loadingManifest ? 'Yuklanmoqda...' : `${shadersCount} ta shader faol`, color: 'bg-surface-2', border: 'border-border', icon: Users },
           ].map((card, i) => {
             const Icon = card.icon;
             return (
               <div
                 key={i}
-                className={`relative h-[115px] rounded-2xl border ${card.border} bg-gradient-to-br ${card.color} p-4 flex flex-col justify-between group hover:border-white/10 hover:shadow-lg transition-all duration-300`}
+                className={`relative h-[115px] rounded-lg border ${card.border} ${card.color} p-4 flex flex-col justify-between group hover:border-strong transition-colors duration-300`}
               >
-                <span className="flex size-9 items-center justify-center rounded-lg bg-white/5 border border-white/5 group-hover:scale-110 transition duration-300">
-                  <Icon className="size-5 text-white" />
+                <span className={`flex ${card.featured ? 'size-10' : 'size-9'} items-center justify-center rounded-lg bg-surface-3 border border-border group-hover:scale-110 transition duration-300`}>
+                  <Icon className={card.featured ? 'size-5.5 text-primary' : 'size-5 text-primary'} />
                 </span>
                 <div>
-                  <span className="block text-sm font-black text-white">{card.title}</span>
-                  <span className="block text-[12px] text-[#8ba0b8] mt-0.5">{card.desc}</span>
+                  <span className={`block font-semibold text-foreground ${card.featured ? 'text-base' : 'text-sm'}`}>{card.title}</span>
+                  <span className="block text-[12px] text-muted-foreground mt-0.5">{card.desc}</span>
                 </div>
               </div>
             );
@@ -473,34 +437,34 @@ function ServerDetail({
 
         {/* 3. Stat Panels (2 columns large cards like StreamCraft) */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-white/5 bg-[#0d1219]/40 p-5 flex flex-col items-center justify-center hover:bg-[#0d1219]/60 transition duration-300">
-            <span className="text-4xl font-black text-cyan-300 tracking-wide text-glow">{playerValue}</span>
-            <span className="text-sm font-semibold text-[#8ba0b8] mt-1.5">O'yinchilar onlayn</span>
+          <div className="rounded-lg border border-border bg-surface-2 p-5 flex flex-col items-center justify-center hover:bg-surface-3 transition duration-300">
+            <span className="font-mono text-3xl font-semibold tracking-tight text-foreground">{playerValue}</span>
+            <span className="text-sm font-medium text-muted-foreground mt-1.5">O'yinchilar onlayn</span>
           </div>
 
-          <div className="rounded-2xl border border-white/5 bg-[#0d1219]/40 p-5 flex flex-col items-center justify-center hover:bg-[#0d1219]/60 transition duration-300">
-            <span className="text-4xl font-black text-emerald-400 tracking-wide text-glow">{pingValue}</span>
-            <span className="text-sm font-semibold text-[#8ba0b8] mt-1.5">Aloqa pingi (kechikish)</span>
+          <div className="rounded-lg border border-border bg-surface-2 p-5 flex flex-col items-center justify-center hover:bg-surface-3 transition duration-300">
+            <span className="font-mono text-3xl font-semibold tracking-tight text-foreground">{pingValue}</span>
+            <span className="text-sm font-medium text-muted-foreground mt-1.5">Aloqa pingi (kechikish)</span>
           </div>
         </div>
 
         {/* 4. Bottom 2-column detailed specs (Tizim manzili removed, column spacing updated) */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-[#263246]/60 bg-[#0d1219]/40 p-4 hover:border-white/5 transition-all">
-            <h4 className="text-xs font-black text-white uppercase tracking-wider mb-2">Dunyo haqida</h4>
-            <p className="text-[12px] leading-5 text-[#8ba0b8]">
-              O'yin turi: <strong className="text-white">{capitalizeStr(server.server_type)}</strong><br />
-              Minecraft versiyasi: <strong className="text-white">{server.minecraft_version}</strong><br />
-              Yadro loaderi: <strong className="text-white">{capitalizeStr(server.loader)}</strong>
+          <div className="rounded-lg border border-border bg-surface-2 p-4 hover:border-strong transition-all">
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">Dunyo haqida</h4>
+            <p className="text-[12px] leading-5 text-muted-foreground">
+              O'yin turi: <strong className="text-foreground">{capitalizeStr(server.server_type)}</strong><br />
+              Minecraft versiyasi: <strong className="text-foreground">{server.minecraft_version}</strong><br />
+              Yadro loaderi: <strong className="text-foreground">{capitalizeStr(server.loader)}</strong>
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#263246]/60 bg-[#0d1219]/40 p-4 hover:border-white/5 transition-all">
-            <h4 className="text-xs font-black text-white uppercase tracking-wider mb-2">Kirish rejimi</h4>
-            <p className="text-[12px] leading-5 text-[#8ba0b8]">
-              Oq ro'yxat (Whitelist): <strong className="text-white">{server.whitelist_enabled ? 'Ha' : "Yo'q"}</strong><br />
-              Boshqariladigan (Managed): <strong className="text-white">{server.is_managed ? 'Ha' : "Yo'q"}</strong><br />
-              Launcher himoyasi: <strong className="text-emerald-400 font-semibold">Faol 🛡️</strong>
+          <div className="rounded-lg border border-border bg-surface-2 p-4 hover:border-strong transition-all">
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">Kirish rejimi</h4>
+            <p className="text-[12px] leading-5 text-muted-foreground">
+              Oq ro'yxat (Whitelist): <strong className="text-foreground">{server.whitelist_enabled ? 'Ha' : "Yo'q"}</strong><br />
+              Boshqariladigan (Managed): <strong className="text-foreground">{server.is_managed ? 'Ha' : "Yo'q"}</strong><br />
+              Launcher himoyasi: <strong className="text-primary font-semibold">Faol</strong>
             </p>
           </div>
         </div>
@@ -542,46 +506,46 @@ function LaunchModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className={`w-[430px] rounded-3xl border bg-[#101822] p-8 shadow-[0_28px_90px_rgba(0,0,0,0.45)] ${isError ? 'border-red-300/35' : 'border-cyan-300/35'
+        className={`w-[430px] rounded-xl border bg-surface p-8 shadow-md ${isError ? 'border-destructive/40' : 'border-border'
           }`}
       >
         <div className="flex items-start justify-between gap-5">
           <div>
-            <h3 className="text-2xl font-black text-white">{title}</h3>
-            <p className={`mt-2 text-sm leading-6 ${isError ? 'text-red-200' : 'text-[#8ba0b8]'}`}>
+            <h3 className="text-2xl font-semibold text-foreground">{title}</h3>
+            <p className={`mt-2 text-sm leading-6 ${isError ? 'text-destructive' : 'text-muted-foreground'}`}>
               {message || (isError ? 'Jarayon yakunlanmadi. Qayta urinishingiz mumkin.' : 'Server paketi tayyorlanmoqda.')}
             </p>
           </div>
-          <button onClick={onCancel} className="rounded-lg p-2 text-[#8ba0b8] transition hover:bg-white/5 hover:text-white" aria-label="Modalni yopish">
+          <button onClick={onCancel} className="rounded-lg p-2 text-muted-foreground transition hover:bg-surface-3 hover:text-foreground" aria-label="Modalni yopish">
             <X className="size-5" />
           </button>
         </div>
 
         {!isError ? (
           <>
-            <div className="mt-8 h-3 overflow-hidden rounded-full bg-[#1c2738]">
+            <div className="mt-8 h-3 overflow-hidden rounded-full bg-surface-3">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300 shadow-[0_0_18px_rgba(0,240,255,0.45)]"
+                className="h-full rounded-full bg-primary"
                 initial={{ width: 0 }}
                 animate={{ width: `${percent}%` }}
               />
             </div>
             <div className="mt-4 flex items-end justify-between">
-              <span className="text-3xl font-black text-cyan-300">{Math.round(percent)}%</span>
-              <span className="text-sm font-semibold text-[#dfeaff]">
+              <span className="font-mono text-2xl font-semibold text-foreground">{Math.round(percent)}%</span>
+              <span className="text-sm font-medium text-muted-foreground">
                 {progress.speed} • {progress.eta} qoldi
               </span>
             </div>
-            <button onClick={onCancel} className="mt-8 h-11 rounded-xl border border-[#2b3950] px-5 text-sm font-bold text-[#dfeaff] transition hover:border-cyan-300/40">
+            <button onClick={onCancel} className="mt-8 h-11 rounded-lg border border-border px-5 text-sm font-medium text-foreground transition hover:border-strong">
               Bekor qilish
             </button>
           </>
         ) : (
           <div className="mt-8 flex gap-3">
-            <button onClick={onRetry} className="h-12 rounded-xl bg-gradient-to-br from-red-400 to-orange-400 px-5 text-sm font-black text-[#071017]">
+            <button onClick={onRetry} className="h-12 rounded-lg bg-destructive px-5 text-sm font-semibold text-foreground">
               Qayta urinish
             </button>
-            <button onClick={onCancel} className="h-12 rounded-xl border border-[#2b3950] px-5 text-sm font-bold text-[#dfeaff]">
+            <button onClick={onCancel} className="h-12 rounded-lg border border-border px-5 text-sm font-medium text-foreground">
               Bekor qilish
             </button>
           </div>
@@ -770,7 +734,7 @@ export function HomeView({
     return (
       <div className="flex h-full items-center justify-center">
         <motion.span
-          className="size-11 rounded-full border-[3px] border-cyan-300/20 border-t-cyan-300"
+          className="size-11 rounded-full border-[3px] border-border border-t-primary"
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
         />
