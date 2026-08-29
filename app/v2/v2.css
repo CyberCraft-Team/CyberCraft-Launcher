@@ -1,0 +1,206 @@
+/*
+ * CyberCraft Launcher v2 — voxel + cyberpunk visual language.
+ *
+ * Every token is scoped under .v2-root so nothing here can leak into the
+ * shipped v1 UI. v2 is a parallel candidate, not a replacement, until it
+ * wins the side-by-side.
+ */
+
+.v2-root {
+  /* Surfaces — cool near-black, never pure #000. Each step is a real
+     luminance jump: at one point these sat ~6 steps apart and the panels
+     dissolved into the ground plane. */
+  --v2-void: #06080c;
+  --v2-surface: #121a24;
+  --v2-raised: #1b2530;
+  --v2-sunk: #090d12;
+
+  /* Structure */
+  --v2-line: #26333f;
+  --v2-line-hot: #3a4d5e;
+
+  /* Text */
+  --v2-text: #e8f0f7;
+  --v2-dim: #8296ab;
+  --v2-faint: #56687d;
+
+  /* Accent — acid lime. Creeper green read through a neon filter:
+     the one place Minecraft and cyberpunk actually agree. */
+  --v2-acid: #8cff2e;
+  --v2-acid-deep: #5fc400;
+  --v2-acid-dark: #2f6b00;
+
+  /* Status only. Never decorative. */
+  --v2-alert: #ff2e88;
+  --v2-warn: #ffb020;
+
+  color-scheme: dark;
+  background: var(--v2-void);
+  color: var(--v2-text);
+  font-family: var(--font-chakra), system-ui, sans-serif;
+
+  /* Blocky world: one radius system, and it is zero. */
+  --v2-radius: 0px;
+}
+
+.v2-pixel {
+  font-family: var(--font-pixel), monospace;
+}
+
+.v2-mono {
+  font-family: var(--font-jbmono), ui-monospace, monospace;
+}
+
+/* ── Voxel block button ──────────────────────────────────────────────
+   A Minecraft button is a solid with a lit top edge and a shaded bottom.
+   Pressing it collapses the bottom shadow and drops the face, so the
+   click reads as physical depth rather than a color change. */
+.v2-block-btn {
+  position: relative;
+  border: 0;
+  border-top: 2px solid rgb(255 255 255 / 0.35);
+  border-left: 2px solid rgb(255 255 255 / 0.18);
+  border-right: 2px solid rgb(0 0 0 / 0.35);
+  border-bottom: 2px solid rgb(0 0 0 / 0.45);
+  box-shadow: 0 4px 0 0 var(--v2-acid-dark);
+  transition: transform 90ms steps(2), box-shadow 90ms steps(2), background-color 140ms;
+}
+.v2-block-btn:hover:not(:disabled) {
+  background-color: var(--v2-acid);
+}
+.v2-block-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 0 var(--v2-acid-dark);
+}
+.v2-block-btn:disabled {
+  box-shadow: 0 4px 0 0 #10161d;
+  border-top-color: rgb(255 255 255 / 0.08);
+  border-bottom-color: rgb(0 0 0 / 0.3);
+}
+
+/* Neutral variant of the same solid, for secondary actions. */
+.v2-block-btn--ghost {
+  box-shadow: 0 4px 0 0 #0a0e13;
+}
+.v2-block-btn--ghost:hover:not(:disabled) {
+  background-color: var(--v2-raised);
+}
+.v2-block-btn--ghost:active:not(:disabled) {
+  box-shadow: 0 0 0 0 #0a0e13;
+}
+
+/* ── Voxel surface ───────────────────────────────────────────────────
+   Same lit-top / shaded-bottom logic as the button, at panel weight. */
+.v2-face {
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  border-left: 1px solid rgb(255 255 255 / 0.04);
+  border-right: 1px solid rgb(0 0 0 / 0.4);
+  border-bottom: 1px solid rgb(0 0 0 / 0.5);
+}
+
+/* ── Pixel grid ground plane ─────────────────────────────────────────
+   16px cells, the Minecraft texture unit. Fixed and pointer-events-none
+   so it never repaints during scroll. */
+.v2-grid-bg {
+  background-image:
+    linear-gradient(to right, rgb(140 255 46 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(140 255 46 / 0.05) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* ── Isometric cube ──────────────────────────────────────────────────
+   Three faces, real 3D transforms. This is the brand mark. */
+.v2-cube {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(-24deg) rotateZ(45deg);
+}
+.v2-cube i {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.v2-cube .cube-top {
+  background: var(--v2-acid);
+  transform: translateZ(11px);
+}
+.v2-cube .cube-side-a {
+  background: var(--v2-acid-deep);
+  transform-origin: left;
+  transform: rotateY(90deg) translateX(11px) translateZ(-11px);
+}
+.v2-cube .cube-side-b {
+  background: var(--v2-acid-dark);
+  transform-origin: top;
+  transform: rotateX(-90deg) translateY(-11px) translateZ(-11px);
+}
+
+/* ── Scanline sweep ──────────────────────────────────────────────────
+   One slow pass across the header. Signals "system online" and nothing
+   else animates in that bar, so it reads as status, not decoration. */
+@keyframes v2-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.v2-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(140 255 46 / 0.07) 45%,
+    rgb(140 255 46 / 0.12) 50%,
+    rgb(140 255 46 / 0.07) 55%,
+    transparent
+  );
+  animation: v2-sweep 7s linear infinite;
+}
+
+/* ── Corner ticks ────────────────────────────────────────────────────
+   Four 5px marks that bracket a panel. Cheaper than a full frame and
+   keeps the HUD read without boxing everything in. */
+.v2-ticks::before,
+.v2-ticks::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-color: var(--v2-acid);
+  pointer-events: none;
+}
+.v2-ticks::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.v2-ticks::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+/* ── Live dot ────────────────────────────────────────────────────────
+   Semantic only: it marks a real online server. */
+@keyframes v2-blip {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.v2-live {
+  animation: v2-blip 2.4s steps(2, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-sweep::after,
+  .v2-live {
+    animation: none;
+  }
+  .v2-block-btn {
+    transition: background-color 140ms;
+  }
+}
