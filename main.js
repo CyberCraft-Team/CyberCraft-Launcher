@@ -251,32 +251,113 @@ ipcMain.handle('api:start-oauth', async (event, provider) => {
             <html>
               <head>
                 <title>CyberCraft Auth</title>
+                <meta charset="utf-8" />
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
                 <style>
+                  :root {
+                    --void: #06080c;
+                    --surface: #121a24;
+                    --line: #26333f;
+                    --text: #e8f0f7;
+                    --dim: #8296ab;
+                    --faint: #56687d;
+                    --acid: #8cff2e;
+                    --acid-deep: #5fc400;
+                    --acid-dark: #2f6b00;
+                  }
+                  * { box-sizing: border-box; }
                   body {
-                    background-color: #0b1622;
-                    color: #ffffff;
-                    font-family: sans-serif;
+                    background-color: var(--void);
+                    background-image:
+                      linear-gradient(to right, rgb(140 255 46 / 0.05) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgb(140 255 46 / 0.05) 1px, transparent 1px);
+                    background-size: 16px 16px;
+                    color: var(--text);
+                    font-family: "Chakra Petch", system-ui, sans-serif;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     height: 100vh;
                     margin: 0;
                   }
-                  .container {
-                    text-align: center;
-                    padding: 40px;
-                    border-radius: 20px;
-                    background-color: #101822;
-                    border: 1px solid #00f0ff;
-                    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+                  .cube {
+                    width: 28px;
+                    height: 28px;
+                    margin: 0 auto 28px;
+                    position: relative;
+                    transform-style: preserve-3d;
+                    transform: rotateX(-24deg) rotateZ(45deg);
                   }
-                  h1 { color: #00f0ff; margin-bottom: 10px; }
-                  p { color: #8ba0b8; }
+                  .cube i { position: absolute; inset: 0; display: block; }
+                  .cube .top { background: var(--acid); transform: translateZ(14px); }
+                  .cube .side-a { background: var(--acid-deep); transform-origin: left; transform: rotateY(90deg) translateX(14px) translateZ(-14px); }
+                  .cube .side-b { background: var(--acid-dark); transform-origin: top; transform: rotateX(-90deg) translateY(-14px) translateZ(-14px); }
+                  .container {
+                    position: relative;
+                    text-align: center;
+                    padding: 48px 44px;
+                    background-color: var(--surface);
+                    border-top: 1px solid rgb(255 255 255 / 0.07);
+                    border-left: 1px solid rgb(255 255 255 / 0.04);
+                    border-right: 1px solid rgb(0 0 0 / 0.4);
+                    border-bottom: 1px solid rgb(0 0 0 / 0.5);
+                    box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+                    max-width: 380px;
+                  }
+                  .container::before, .container::after {
+                    content: '';
+                    position: absolute;
+                    width: 8px;
+                    height: 8px;
+                    border-color: var(--acid);
+                    pointer-events: none;
+                  }
+                  .container::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+                  .container::after { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+                  .status {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 20px;
+                    font-family: "JetBrains Mono", ui-monospace, monospace;
+                    font-size: 11px;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    color: var(--acid);
+                  }
+                  .dot {
+                    width: 6px;
+                    height: 6px;
+                    background: var(--acid);
+                    animation: blip 2.4s steps(2, end) infinite;
+                  }
+                  @keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+                  h1 {
+                    font-family: "Press Start 2P", monospace;
+                    font-size: 18px;
+                    line-height: 1.6;
+                    color: var(--text);
+                    margin: 0 0 18px;
+                  }
+                  p {
+                    color: var(--dim);
+                    font-size: 14px;
+                    line-height: 1.6;
+                    margin: 0 0 8px;
+                  }
+                  p:last-of-type { margin-bottom: 0; color: var(--faint); font-size: 13px; }
+                  @media (prefers-reduced-motion: reduce) {
+                    .dot { animation: none; }
+                  }
                 </style>
               </head>
               <body>
                 <div class="container">
-                  <h1>Muvaffaqiyatli!</h1>
+                  <div class="cube"><i class="top"></i><i class="side-a"></i><i class="side-b"></i></div>
+                  <div class="status"><span class="dot"></span>Ulanish muvaffaqiyatli</div>
+                  <h1>MUVAFFAQIYATLI!</h1>
                   <p>Launcherda muvaffaqiyatli tizimga kirdingiz.</p>
                   <p>Ushbu oynani yopishingiz va launcherga qaytishingiz mumkin.</p>
                 </div>
