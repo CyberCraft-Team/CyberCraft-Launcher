@@ -31,6 +31,9 @@ const DEFAULT_SETTINGS = {
   fullscreen: false,
   autoClose: true,
   apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
+  // Which visual direction the shell renders. Both are fully wired; this
+  // only picks which one draws.
+  uiVersion: 'v2',
 }
 
 function getDefaultPaths() {

@@ -1,6 +1,9 @@
 export {}
 
 declare global {
+  /** Which visual direction the shell renders. Both are fully wired. */
+  type UiVersion = 'v1' | 'v2'
+
   interface LauncherUser {
     id: number
     username: string
@@ -113,6 +116,7 @@ declare global {
       fullscreen: boolean
       autoClose: boolean
       apiBaseUrl: string
+      uiVersion: UiVersion
       gamePath?: string
       modsPath?: string
     }>
@@ -123,6 +127,7 @@ declare global {
       fullscreen: boolean
       autoClose?: boolean
       apiBaseUrl?: string
+      uiVersion?: UiVersion
       gamePath?: string
       modsPath?: string
     }) => Promise<boolean>

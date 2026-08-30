@@ -150,8 +150,23 @@ function buildMockBridge(): ElectronAPI {
     fullscreen: false,
     autoClose: true,
     apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
+    uiVersion: 'v2' as UiVersion,
     gamePath: 'C:\\Users\\preview\\AppData\\Roaming\\CyberCraft\\game',
     modsPath: 'C:\\Users\\preview\\AppData\\Roaming\\CyberCraft\\servers',
+  }
+
+  /*
+   * Electron writes settings to disk, so they survive a reload. Mirroring
+   * that into localStorage keeps the browser preview honest: without it the
+   * design switch appears to revert on refresh, which reads as a bug in the
+   * switch rather than a limitation of the mock.
+   */
+  const STORE_KEY = 'cc-preview-settings'
+  try {
+    const saved = window.localStorage.getItem(STORE_KEY)
+    if (saved) settings = { ...settings, ...JSON.parse(saved) }
+  } catch {
+    // Private mode or blocked storage: fall back to in-memory only.
   }
 
   return {
@@ -161,7 +176,17 @@ function buildMockBridge(): ElectronAPI {
 
     loadSettings: async () => settings,
     saveSettings: async (next) => {
-      settings = { ...settings, ...next, autoClose: next.autoClose ?? settings.autoClose }
+      settings = {
+        ...settings,
+        ...next,
+        autoClose: next.autoClose ?? settings.autoClose,
+        uiVersion: next.uiVersion ?? settings.uiVersion,
+      }
+      try {
+        window.localStorage.setItem(STORE_KEY, JSON.stringify(settings))
+      } catch {
+        // Same fallback as the read above.
+      }
       return true
     },
     selectDirectory: async () => null,

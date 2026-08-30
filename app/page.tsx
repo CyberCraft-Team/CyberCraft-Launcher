@@ -1,10 +1,10 @@
 import { DevPreviewBridge } from '@/components/dev-preview-bridge'
-import { Launcher } from '@/components/launcher'
+import { LauncherShell } from '@/components/launcher-shell'
 
 export default function Page() {
   return (
     <DevPreviewBridge>
-      <Launcher />
+      <LauncherShell />
     </DevPreviewBridge>
   )
 }

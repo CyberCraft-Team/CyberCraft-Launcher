@@ -15,8 +15,11 @@ import {
   ShieldCheck,
   Terminal,
   ToggleRight,
+  Palette,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+
+import { useUiVersion } from '@/lib/ui-version'
 
 const MIN_RAM = 2
 const MAX_RAM = 16
@@ -109,6 +112,7 @@ function PathRow({
 }
 
 export function SettingsView() {
+  const { uiVersion, setUiVersion } = useUiVersion()
   const [ram, setRam] = useState(6)
   const [args, setArgs] = useState(DEFAULT_ARGS)
   const [optimize, setOptimize] = useState(true)
@@ -213,6 +217,34 @@ export function SettingsView() {
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-thin mt-2">
         <div className="max-w-[700px] mx-auto space-y-5 pb-6">
+          <SettingsCard icon={Palette} title="Dizayn" description="Ikkala ko‘rinish ham to‘liq ishlaydi — bu faqat qaysi biri chizilishini tanlaydi.">
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { id: 'v1' as const, name: 'Klassik', hint: 'Zumrad, yumaloq burchaklar' },
+                { id: 'v2' as const, name: 'Voxel', hint: 'Kislotali yashil, bloklar' },
+              ]).map((option) => {
+                const active = uiVersion === option.id
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => setUiVersion(option.id)}
+                    aria-pressed={active}
+                    className={`flex flex-col items-start gap-1 rounded-lg border p-4 text-left transition-colors ${
+                      active
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-surface hover:border-strong'
+                    }`}
+                  >
+                    <span className={`text-sm font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>
+                      {option.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{option.hint}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </SettingsCard>
+
           <SettingsCard icon={MemoryStick} title="RAM ajratish" description="Minecraft jarayoni uchun ajratiladigan xotira hajmi.">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-muted-foreground">Launcher tavsiyasi: 6-8 GB</span>

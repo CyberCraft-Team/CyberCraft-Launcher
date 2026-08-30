@@ -11,19 +11,42 @@ import { VoxelMark } from './voxel'
  * brand, the form on the right. Nothing is centered, per the asymmetry
  * the rest of v2 holds to.
  */
-export function LoginV2({ onAuth }: { onAuth: () => void }) {
+export function LoginV2({
+  onLogin,
+  onOAuth,
+  error,
+}: {
+  onLogin: (username: string, password: string) => Promise<void>
+  onOAuth: (provider: 'google' | 'telegram') => Promise<void>
+  error?: string
+}) {
   const reduce = useReducedMotion()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
 
-  function submit() {
+  async function submit() {
+    if (busy || !username || !password) return
     setBusy(true)
-    // Visual preview only: no network call behind this.
-    setTimeout(() => {
+    try {
+      await onLogin(username, password)
+    } catch {
+      // The shell owns the error text; it arrives back through `error`.
+    } finally {
       setBusy(false)
-      onAuth()
-    }, 450)
+    }
+  }
+
+  async function oauth(provider: 'google' | 'telegram') {
+    if (busy) return
+    setBusy(true)
+    try {
+      await onOAuth(provider)
+    } catch {
+      // Same: surfaced through `error`.
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -81,11 +104,13 @@ export function LoginV2({ onAuth }: { onAuth: () => void }) {
           </p>
         </div>
 
+        {/* Capability markers, not metrics: nothing is signed in yet, so
+            there are no real counts to show here. */}
         <div className="relative flex gap-5">
           {[
-            { n: '4', l: 'SERVER' },
-            { n: '1.2K', l: 'SLOT' },
-            { n: '218', l: 'MOD' },
+            { n: 'AUTO', l: 'SINXRON' },
+            { n: 'JAVA', l: 'AVTO-TOPISH' },
+            { n: '1-KLIK', l: 'ISHGA TUSHIRISH' },
           ].map((s) => (
             <div key={s.l}>
               <div className="v2-pixel text-[15px] leading-none text-[var(--v2-text)]">
@@ -104,6 +129,15 @@ export function LoginV2({ onAuth }: { onAuth: () => void }) {
           <p className="mt-2.5 text-[13px] text-[var(--v2-dim)]">
             CyberCraft akkauntingiz bilan davom eting.
           </p>
+
+          {error && (
+            <p
+              role="alert"
+              className="mt-4 border-l-2 border-[var(--v2-alert)] bg-[var(--v2-alert)]/10 px-3 py-2 text-[12px] leading-5 text-[var(--v2-text)]"
+            >
+              {error}
+            </p>
+          )}
 
           <div className="mt-6 space-y-3">
             <label className="block">
@@ -153,15 +187,17 @@ export function LoginV2({ onAuth }: { onAuth: () => void }) {
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={onAuth}
-                className="v2-block-btn v2-block-btn--ghost flex h-11 items-center justify-center gap-2 bg-[var(--v2-raised)] text-[13px] font-medium text-[var(--v2-text)]"
+                onClick={() => oauth('google')}
+                disabled={busy}
+                className="v2-block-btn v2-block-btn--ghost flex h-11 items-center justify-center gap-2 bg-[var(--v2-raised)] text-[13px] font-medium text-[var(--v2-text)] disabled:opacity-70"
               >
                 <GoogleLogoIcon size={16} weight="bold" />
                 Google
               </button>
               <button
-                onClick={onAuth}
-                className="v2-block-btn v2-block-btn--ghost flex h-11 items-center justify-center gap-2 bg-[var(--v2-raised)] text-[13px] font-medium text-[var(--v2-text)]"
+                onClick={() => oauth('telegram')}
+                disabled={busy}
+                className="v2-block-btn v2-block-btn--ghost flex h-11 items-center justify-center gap-2 bg-[var(--v2-raised)] text-[13px] font-medium text-[var(--v2-text)] disabled:opacity-70"
               >
                 <TelegramLogoIcon size={16} weight="fill" />
                 Telegram

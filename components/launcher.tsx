@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { Home, Settings, Minus, X, Gamepad2, LogOut, RefreshCw, Cuboid, User, Search, Server } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useLauncherSession } from '@/lib/use-launcher-session'
 import { HomeView } from './home-view'
 import { SettingsView } from './settings-view'
 import { UpdateBanner } from './update-banner'
@@ -16,122 +17,21 @@ const NAV: { id: Tab; label: string; icon: typeof Home }[] = [
 
 export function Launcher() {
   const [tab, setTab] = useState<Tab>('home')
-  const [user, setUser] = useState<LauncherUser | null>(null)
-  const [servers, setServers] = useState<LauncherServer[]>([])
-  const [selectedServerId, setSelectedServerId] = useState('')
-  const [loadingSession, setLoadingSession] = useState(true)
-  const [loadingServers, setLoadingServers] = useState(false)
-  const [connectionError, setConnectionError] = useState('')
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'offline' | 'disconnected'>('disconnected')
-
-  async function refreshServers() {
-    if (!window.electronAPI || !user) return
-    setLoadingServers(true)
-    setConnectionError('')
-    try {
-      const nextServers = await window.electronAPI.listServers()
-      setServers(nextServers)
-    } catch (error) {
-      setConnectionError(error instanceof Error ? error.message : 'Backend mavjud emas')
-    } finally {
-      setLoadingServers(false)
-    }
-  }
-
-  useEffect(() => {
-    async function bootstrap() {
-      if (!window.electronAPI) {
-        setLoadingSession(false)
-        return
-      }
-      try {
-        const session = await window.electronAPI.getSession()
-        if (session.authenticated) {
-          setUser(session.user)
-        } else if (session.error) {
-          setConnectionError(session.error)
-        }
-      } finally {
-        setLoadingSession(false)
-      }
-    }
-    bootstrap()
-
-    const api = window.electronAPI
-    if (!api) return
-
-    const unsubWsConnected = api.onWsConnected(() => setConnectionStatus('connected'))
-    const unsubWsDisconnected = api.onWsDisconnected(() => {
-      if (api.hasValidCache) {
-        api.hasValidCache().then((valid) => setConnectionStatus(valid ? 'offline' : 'disconnected'))
-      } else {
-        setConnectionStatus('disconnected')
-      }
-    })
-    const unsubWsStatus = api.onWsStatus((data) => {
-      setConnectionStatus('connected')
-    })
-
-    return () => {
-      unsubWsConnected()
-      unsubWsDisconnected()
-      unsubWsStatus()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (user) {
-      refreshServers()
-    } else {
-      setServers([])
-      setSelectedServerId('')
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (!window.electronAPI) return
-    window.electronAPI.checkUpdate().catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (servers.length > 0 && !selectedServerId) {
-      setSelectedServerId(servers[0].id)
-    }
-  }, [servers, selectedServerId])
-
-  async function handleLogin(username: string, password: string) {
-    if (!window.electronAPI) return
-    setConnectionError('')
-    try {
-      const session = await window.electronAPI.login({ username, password })
-      setUser(session.user)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Kirish muvaffaqiyatsiz bo\'ldi'
-      setConnectionError(message)
-      throw error
-    }
-  }
-
-  async function handleOAuthLogin(provider: 'google' | 'telegram') {
-    if (!window.electronAPI) return
-    setConnectionError('')
-    try {
-      const session = await window.electronAPI.startOauth(provider)
-      setUser(session.user)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Ijtimoiy tarmoq orqali kirish muvaffaqiyatsiz bo\'ldi'
-      setConnectionError(message)
-      throw error
-    }
-  }
-
-  async function handleLogout() {
-    await window.electronAPI?.logout()
-    setUser(null)
-    setServers([])
-  }
-
-  const onlinePlayers = servers.reduce((sum, server) => sum + (server.current_players || 0), 0)
+  const {
+    user,
+    servers,
+    selectedServerId,
+    setSelectedServerId,
+    loadingSession,
+    loadingServers,
+    connectionError,
+    connectionStatus,
+    onlinePlayers,
+    refreshServers,
+    login: handleLogin,
+    oauthLogin: handleOAuthLogin,
+    logout: handleLogout,
+  } = useLauncherSession()
 
   return (
     <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-background">
