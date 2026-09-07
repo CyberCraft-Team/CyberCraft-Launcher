@@ -5,11 +5,13 @@
   "private": true,
   "main": "main.js",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "next dev",
     "build": "next build",
     "build:app": "npm run build && electron-builder",
     "build:dir": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win portable",
+    "publish:win": "npm run build && electron-builder --win nsis --publish always",
     "package:win": "npm run build && node scripts/package.js",
     "build:linux": "npm run build && electron-builder --linux AppImage deb tar.gz",
     "build:mac": "npm run build && electron-builder --mac dmg zip",
@@ -36,8 +38,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "cybercraft",
-      "repo": "cybercraft-launcher",
+      "owner": "CyberCraft-Team",
+      "repo": "CyberCraft-Launcher",
       "releaseType": "release"
     },
     "win": {
@@ -48,8 +50,8 @@
       ],
       "publish": {
         "provider": "github",
-        "owner": "cybercraft",
-        "repo": "cybercraft-launcher"
+        "owner": "CyberCraft-Team",
+        "repo": "CyberCraft-Launcher"
       }
     },
     "mac": {
@@ -60,8 +62,8 @@
       "category": "public.app-category.games",
       "publish": {
         "provider": "github",
-        "owner": "cybercraft",
-        "repo": "cybercraft-launcher"
+        "owner": "CyberCraft-Team",
+        "repo": "CyberCraft-Launcher"
       }
     },
     "linux": {
@@ -73,8 +75,8 @@
       "category": "Game",
       "publish": {
         "provider": "github",
-        "owner": "cybercraft",
-        "repo": "cybercraft-launcher"
+        "owner": "CyberCraft-Team",
+        "repo": "CyberCraft-Launcher"
       }
     },
     "nsis": {
@@ -106,6 +108,7 @@
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5",
     "react": "^19",
     "react-dom": "^19",

@@ -18,6 +18,7 @@ import { useLauncherSession } from '@/lib/use-launcher-session'
 import { useUiVersion } from '@/lib/ui-version'
 import { VoxelMark } from './voxel'
 import { LoginV2 } from './login-v2'
+import { UpdateBannerV2 } from './update-banner-v2'
 
 type Screen = 'home' | 'settings'
 
@@ -553,6 +554,8 @@ export function LauncherV2() {
   return (
     <main className="v2-root relative flex h-[100dvh] w-full flex-col overflow-hidden">
       <div className="v2-grid-bg pointer-events-none fixed inset-0 opacity-60" />
+
+      <UpdateBannerV2 />
 
       {/* Header */}
       <header

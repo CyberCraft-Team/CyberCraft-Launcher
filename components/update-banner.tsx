@@ -2,90 +2,13 @@
 
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, DownloadCloud, RefreshCw, Sparkles, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
-type UpdatePhase = 'idle' | 'available' | 'downloading' | 'downloaded'
-
-interface UpdateInfo {
-  version: string
-  releaseNotes?: string
-  releaseDate?: string
-  fileSize?: number
-}
+import { useUpdateStatus } from '@/lib/use-update-status'
 
 export function UpdateBanner() {
-  const [phase, setPhase] = useState<UpdatePhase>('idle')
-  const [info, setInfo] = useState<UpdateInfo | null>(null)
-  const [percent, setPercent] = useState(0)
-  const [dismissed, setDismissed] = useState(false)
-  const [downloading, setDownloading] = useState(false)
+  const { phase, info, percent, visible, download, install, dismiss } = useUpdateStatus()
 
-  useEffect(() => {
-    const api = window.electronAPI
-    if (!api) return
-
-    const unsubAvailable = api.onUpdateAvailable((data) => {
-      setInfo({
-        version: data.version,
-        releaseNotes: data.releaseNotes,
-        releaseDate: data.releaseDate,
-        fileSize: data.fileSize,
-      })
-      setPhase('available')
-      setDismissed(false)
-    })
-
-    const unsubProgress = api.onUpdateProgress((progress) => {
-      setPercent(Math.max(0, Math.min(100, Math.round(progress.percent))))
-      setPhase('downloading')
-    })
-
-    const unsubDownloaded = api.onUpdateDownloaded((data) => {
-      setInfo((prev) => ({
-        version: data.version,
-        releaseNotes: data.releaseNotes,
-        releaseDate: prev?.releaseDate,
-        fileSize: prev?.fileSize,
-      }))
-      setPercent(100)
-      setPhase('downloaded')
-      setDownloading(false)
-      setDismissed(false)
-    })
-
-    return () => {
-      unsubAvailable()
-      unsubProgress()
-      unsubDownloaded()
-    }
-  }, [])
-
-  async function handleDownload() {
-    if (!window.electronAPI || downloading) return
-    setDownloading(true)
-    setPhase('downloading')
-    try {
-      await window.electronAPI.downloadUpdate()
-    } catch {
-      // If the download kicks off asynchronously the progress/downloaded
-      // events will still drive the UI; swallow errors here to avoid a
-      // dead-end state and let the user retry.
-      setDownloading(false)
-    }
-  }
-
-  async function handleInstall() {
-    if (!window.electronAPI) return
-    try {
-      await window.electronAPI.installUpdate()
-    } catch {
-      // no-op — if this fails the banner just stays put
-    }
-  }
-
-  if (phase === 'idle' || dismissed || !info) {
-    return null
-  }
+  if (!visible || !info) return null
 
   return (
     <AnimatePresence>
@@ -135,7 +58,7 @@ export function UpdateBanner() {
             {phase === 'downloaded' && (
               <>
                 <div className="truncate text-sm font-bold text-foreground">
-                  O'rnatish uchun tayyor <span className="text-primary">v{info.version}</span>
+                  O&apos;rnatish uchun tayyor <span className="text-primary">v{info.version}</span>
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">Dasturni qayta ishga tushiring</div>
               </>
@@ -144,7 +67,7 @@ export function UpdateBanner() {
 
           {phase === 'available' && (
             <button
-              onClick={handleDownload}
+              onClick={download}
               className="shrink-0 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-foreground transition hover:border-strong hover:bg-surface-3"
             >
               Yuklab olish
@@ -152,7 +75,7 @@ export function UpdateBanner() {
           )}
           {phase === 'downloaded' && (
             <button
-              onClick={handleInstall}
+              onClick={install}
               className="flex shrink-0 items-center gap-1.5 rounded-lg border border-transparent bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:bg-primary-hover"
             >
               <RefreshCw className="size-3.5" />
@@ -162,7 +85,7 @@ export function UpdateBanner() {
 
           {phase !== 'downloading' && (
             <button
-              onClick={() => setDismissed(true)}
+              onClick={dismiss}
               aria-label="Yopish"
               className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-surface-3 hover:text-foreground"
             >

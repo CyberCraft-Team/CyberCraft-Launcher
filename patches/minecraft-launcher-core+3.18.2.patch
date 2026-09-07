@@ -1,0 +1,26 @@
+diff --git a/node_modules/minecraft-launcher-core/components/handler.js b/node_modules/minecraft-launcher-core/components/handler.js
+--- a/node_modules/minecraft-launcher-core/components/handler.js
++++ b/node_modules/minecraft-launcher-core/components/handler.js
+@@ -35,6 +35,11 @@
+   }
+ 
+   downloadAsync (url, directory, name, retry, type) {
++    // Do not rewrite Mojang hosts to a mirror here. A local edit once did
++    // that, which overrode whatever the caller passed in
++    // options.overrides.url; when the mirror went down every download
++    // failed with ECONNREFUSED. Mirror selection belongs to the app --
++    // see resolveDownloadUrls in main.js.
+     return new Promise(resolve => {
+       fs.mkdirSync(directory, { recursive: true })
+ 
+@@ -177,7 +182,9 @@
+       const subhash = hash.substring(0, 2)
+       const subAsset = path.join(assetDirectory, 'objects', subhash)
+ 
+-      if (!fs.existsSync(path.join(subAsset, hash)) || !await this.checkSum(hash, path.join(subAsset, hash))) {
++      // Existence is enough: re-hashing every asset on each launch cost
++      // far more than it caught.
++      if (!fs.existsSync(path.join(subAsset, hash))) {
+         await this.downloadAsync(`${this.options.overrides.url.resource}/${subhash}/${hash}`, subAsset, hash, true, 'assets')
+       }
+       counter++

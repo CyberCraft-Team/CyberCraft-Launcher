@@ -174,9 +174,10 @@ declare global {
     onWsLaunchProgress: (callback: (data: any) => void) => () => void
     onWsUpdate: (callback: (data: any) => void) => () => void
 
-    onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string; releaseDate?: string; fileSize: number }) => void) => () => void
+    onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string; releaseDate?: string; fileSize: number; autoDownloading?: boolean }) => void) => () => void
     onUpdateProgress: (callback: (progress: UpdateProgress) => void) => () => void
     onUpdateDownloaded: (callback: (info: { version: string; releaseNotes?: string }) => void) => () => void
+    onUpdateError: (callback: (message: string) => void) => () => void
   }
 
   interface Window {

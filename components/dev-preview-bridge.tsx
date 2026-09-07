@@ -239,6 +239,7 @@ function buildMockBridge(): ElectronAPI {
     onUpdateAvailable: noSubscription,
     onUpdateProgress: noSubscription,
     onUpdateDownloaded: noSubscription,
+    onUpdateError: noSubscription,
   }
 }
 

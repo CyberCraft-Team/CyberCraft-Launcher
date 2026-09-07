@@ -104,4 +104,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('updater:update-downloaded', subscription)
     return () => ipcRenderer.removeListener('updater:update-downloaded', subscription)
   },
+
+  onUpdateError: (callback) => {
+    const subscription = (event, message) => callback(message)
+    ipcRenderer.on('updater:error', subscription)
+    return () => ipcRenderer.removeListener('updater:error', subscription)
+  },
 })

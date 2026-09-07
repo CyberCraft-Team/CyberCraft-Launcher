@@ -26,7 +26,10 @@ const defaultRam = Math.max(2, Math.min(4, Math.floor(totalMemGB / 3))) // Yana 
 
 const DEFAULT_SETTINGS = {
   ram: defaultRam,
-  args: '-XX:+UseZGC -XX:MaxGCPauseMillis=10 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch',
+  // AlwaysPreTouch commits the entire heap at startup, so a 4G setting
+  // took 4G off the machine before the game had drawn a frame. Without
+  // it the heap grows as the game actually needs it.
+  args: '-XX:+UseZGC -XX:MaxGCPauseMillis=10 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC',
   optimize: true,
   fullscreen: false,
   autoClose: true,
@@ -749,6 +752,45 @@ async function downloadAuthlibInjector(destPath) {
   })
 }
 
+// Minecraft's own CDN is the default download source. The fastmcmirror
+// mirrors were hardcoded as overrides, so once they stopped answering every
+// launch died inside minecraft-launcher-core -- it resolves getVersion() with
+// the request error, the caller then reads properties off it, throws, and
+// launch() returns null. All the user ever saw was "Minecraft failed to
+// start". Probe the mirror and fall back rather than trusting it blindly.
+const OFFICIAL_DOWNLOAD_URLS = {
+  meta: 'https://launchermeta.mojang.com',
+  resource: 'https://resources.download.minecraft.net',
+  defaultRepoForge: 'https://libraries.minecraft.net/'
+}
+
+const MIRROR_DOWNLOAD_URLS = {
+  meta: 'https://launchermeta.fastmcmirror.org',
+  resource: 'https://resources.fastmcmirror.org',
+  defaultRepoForge: 'https://libraries.fastmcmirror.org/'
+}
+
+let cachedDownloadUrls = null
+
+async function resolveDownloadUrls() {
+  if (cachedDownloadUrls) return cachedDownloadUrls
+
+  let mirrorUp = false
+  try {
+    const response = await fetch(
+      `${MIRROR_DOWNLOAD_URLS.meta}/mc/game/version_manifest.json`,
+      { method: 'HEAD', signal: AbortSignal.timeout(4000) }
+    )
+    mirrorUp = response.ok
+  } catch {
+    mirrorUp = false
+  }
+
+  cachedDownloadUrls = mirrorUp ? MIRROR_DOWNLOAD_URLS : OFFICIAL_DOWNLOAD_URLS
+  console.log(`[LAUNCHER] Download source: ${mirrorUp ? 'fastmcmirror' : 'mojang (mirror unreachable)'}`)
+  return cachedDownloadUrls
+}
+
 async function downloadFile(url, destPath) {
   const fs = require('fs').promises
   const { existsSync } = require('fs')
@@ -847,6 +889,8 @@ ipcMain.handle('launch-game', async (event, options) => {
     const jvmArgsArray = jvmArgs.split(' ').filter(a => a.trim() && a !== '-XX:+ZGenerational')
     jvmArgsArray.push(`-javaagent:${authlibPath}=${yggdrasilUrl}`)
 
+    const downloadUrls = await resolveDownloadUrls()
+
     const opts = {
       clientPackage: null,
       authorization: {
@@ -883,11 +927,12 @@ ipcMain.handle('launch-game', async (event, options) => {
       })(),
       customArgs: jvmArgsArray,
       overrides: {
-        url: {
-          meta: 'https://launchermeta.fastmcmirror.org',
-          resource: 'https://resources.fastmcmirror.org',
-          defaultRepoForge: 'https://libraries.fastmcmirror.org/'
-        }
+        url: downloadUrls,
+        // Without this minecraft-launcher-core spawns the JVM as a plain
+        // child of Electron, so closing the launcher window took the game
+        // down with it -- the JVM died about a second and a half after
+        // launch, mid mod-scan, leaving no crash report at all.
+        detached: true
       }
     }
 
@@ -910,6 +955,30 @@ ipcMain.handle('launch-game', async (event, options) => {
       } catch (err) {
         console.error('Failed to download/install Forge:', err)
         throw new Error(`Failed to download Forge loader: ${err.message}`)
+      }
+    } else if (manifest?.loader === 'neoforge' && manifest?.loaderVersion) {
+      // NeoForge ships the same installer layout as modern Forge -- an
+      // install_profile.json plus a version.json in the jar root -- which is
+      // exactly what MCLC reads before handing the launch to ForgeWrapper.
+      // So the Forge path is reused rather than reimplemented; only the
+      // artifact coordinates differ.
+      const neoFilename = `neoforge-${manifest.loaderVersion}-installer.jar`
+      const neoInstallerPath = path.join(app.getPath('userData'), 'CyberCraft', 'installers', neoFilename)
+      const neoUrl = `https://maven.neoforged.net/releases/net/neoforged/neoforge/${manifest.loaderVersion}/${neoFilename}`
+
+      webContents.send('launch-status', {
+        state: 'syncing',
+        progress: 45,
+        message: `Downloading NeoForge ${manifest.loaderVersion} installer...`
+      })
+
+      try {
+        await downloadFile(neoUrl, neoInstallerPath)
+        opts.forge = neoInstallerPath
+        console.log(`[LAUNCHER] Using NeoForge installer: ${neoInstallerPath}`)
+      } catch (err) {
+        console.error('Failed to download/install NeoForge:', err)
+        throw new Error(`Failed to download NeoForge loader: ${err.message}`)
       }
     } else if (manifest?.loader === 'fabric' && manifest?.loaderVersion) {
       const customName = `fabric-${manifest.minecraft}-${manifest.loaderVersion}`
@@ -972,6 +1041,11 @@ ipcMain.handle('launch-game', async (event, options) => {
       activeGameProcess = null
       if (!webContents.isDestroyed()) {
         webContents.send('launch-status', { state: 'idle', progress: 0, message: `Game exited with code ${code}` })
+      }
+      // The window may have auto-closed while the game was up, in which case
+      // window-all-closed deliberately kept us alive. Nothing left to wait for.
+      if (process.platform !== 'darwin' && BrowserWindow.getAllWindows().length === 0) {
+        app.quit()
       }
     })
 
@@ -1153,6 +1227,10 @@ async function createWindow() {
 app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
+  // Quitting here while the game runs would tear down the process that owns
+  // its pipes. Stay resident until the game exits; the exit handler quits
+  // for us. before-quit already knows not to kill a running game.
+  if (activeGameProcess) return
   if (process.platform !== 'darwin') app.quit()
 })
 
