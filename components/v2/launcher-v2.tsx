@@ -362,8 +362,12 @@ function DashboardV2({ server }: { server: LauncherServer }) {
     }
   }, [])
 
+  // Launching does not depend on the server being up. Minecraft itself runs
+  // fine either way, and a player who wants to sort out their mods, check a
+  // world, or simply be sitting at the menu when the server comes back was
+  // previously stopped at a dead PLAY button.
   const handlePlay = useCallback(async () => {
-    if (!window.electronAPI || !online) return
+    if (!window.electronAPI) return
     setState('working')
     setPercent(0)
     setStatusMessage('Server paketi tekshirilmoqda...')
@@ -380,7 +384,7 @@ function DashboardV2({ server }: { server: LauncherServer }) {
           : "Ishga tushirish muvaffaqiyatsiz bo'ldi",
       )
     }
-  }, [server, online])
+  }, [server])
 
   const handleStop = useCallback(() => {
     window.electronAPI?.stopGame()
@@ -425,18 +429,16 @@ function DashboardV2({ server }: { server: LauncherServer }) {
         <div className="flex shrink-0 flex-col items-stretch gap-2">
           <button
             onClick={running ? handleStop : handlePlay}
-            disabled={(!online && !running) || working}
+            disabled={working}
             className={`v2-block-btn flex h-12 w-[188px] items-center justify-center gap-2.5 px-6 ${
               running
                 ? 'bg-[var(--v2-alert)] text-white'
-                : online
-                  ? 'bg-[var(--v2-acid-deep)] text-[#06210a]'
-                  : 'bg-[var(--v2-raised)] text-[var(--v2-faint)]'
+                : 'bg-[var(--v2-acid-deep)] text-[#06210a]'
             }`}
           >
             {running ? <StopIcon size={17} weight="fill" /> : <PlayIcon size={17} weight="fill" />}
             <span className="v2-pixel text-[10px] leading-none">
-              {running ? 'STOP' : working ? `${percent}%` : online ? 'PLAY' : 'OFFLINE'}
+              {running ? 'STOP' : working ? `${percent}%` : 'PLAY'}
             </span>
           </button>
           <span className="v2-mono text-center text-[10px] text-[var(--v2-faint)]">

@@ -690,7 +690,7 @@ export function HomeView({
   }, [displayServers])
 
   const handlePlay = useCallback(async () => {
-    if (!selectedServer || !window.electronAPI || !isOnline(selectedServer)) return
+    if (!selectedServer || !window.electronAPI) return
 
     setState('checking')
     setDownloadState('downloading')
@@ -742,7 +742,10 @@ export function HomeView({
     )
   }
 
-  const canPlay = Boolean(selectedServer && isOnline(selectedServer) && ['idle', 'error'].includes(state))
+  // A server that is down is not a reason to refuse to start Minecraft. The
+  // game runs regardless; only the auto-connect is skipped, so the player
+  // lands at the menu instead of at a dead PLAY button.
+  const canPlay = Boolean(selectedServer && ['idle', 'error'].includes(state))
 
   return (
     <div className="relative flex h-full min-h-0">

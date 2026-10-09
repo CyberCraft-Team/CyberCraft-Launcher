@@ -1006,7 +1006,12 @@ ipcMain.handle('launch-game', async (event, options) => {
       console.log(`[LAUNCHER] Launching Fabric version: ${customName}`)
     }
 
-    if (server?.ip_address) {
+    // Auto-connect only when the server is actually up. Passing --server for
+    // one that is down drops the player straight onto a "connection failed"
+    // screen, which is a worse landing than the main menu -- and the game is
+    // now launchable while the server is offline, so this case is real.
+    const serverIsUp = server?.status === 'online' || server?.status === 'running'
+    if (server?.ip_address && serverIsUp) {
       opts.server = {
         host: server.ip_address,
         port: server.port || 25565
